@@ -1,0 +1,101 @@
+[
+  {
+    "id": 1,
+    "complex_id": 1,
+    "section_id": 1,
+    "material": "Фундаментные блоки",
+    "planned_date": "2025-11-01",
+    "actual_date": "2025-11-05",
+    "delay_days": 4,
+    "status": "выполнено",
+    "critical": false
+  },
+  {
+    "id": 2,
+    "complex_id": 1,
+    "section_id": 1,
+    "material": "Плиты перекрытия",
+    "planned_date": "2026-03-01",
+    "actual_date": "2026-03-01",
+    "delay_days": 0,
+    "status": "выполнено",
+    "critical": false
+  },
+  {
+    "id": 3,
+    "complex_id": 1,
+    "section_id": 2,
+    "material": "Плиты перекрытия",
+    "planned_date": "2026-06-01",
+    "actual_date": "2026-06-20",
+    "delay_days": 19,
+    "status": "выполнено",
+    "critical": false
+  },
+  {
+    "id": 4,
+    "complex_id": 1,
+    "section_id": 1,
+    "material": "Кирпичная кладка",
+    "planned_date": "2026-08-01",
+    "actual_date": null,
+    "delay_days": 0,
+    "status": "в работе",
+    "critical": false
+  },
+  {
+    "id": 5,
+    "complex_id": 1,
+    "section_id": 3,
+    "material": "Кровля",
+    "planned_date": "2026-10-01",
+    "actual_date": null,
+    "delay_days": 0,
+    "status": "не начато",
+    "critical": false
+  },
+  {
+    "id": 6,
+    "complex_id": 2,
+    "section_id": 4,
+    "material": "Фундамент",
+    "planned_date": "2026-02-01",
+    "actual_date": "2026-03-15",
+    "delay_days": 42,
+    "status": "выполнено",
+    "critical": true
+  },
+  {
+    "id": 7,
+    "complex_id": 2,
+    "section_id": 4,
+    "material": "Монолитный каркас",
+    "planned_date": "2026-07-01",
+    "actual_date": null,
+    "delay_days": 35,
+    "status": "в работе",
+    "critical": true
+  },
+  {
+    "id": 8,
+    "complex_id": 2,
+    "section_id": 5,
+    "material": "Фундамент",
+    "planned_date": "2026-05-01",
+    "actual_date": null,
+    "delay_days": 45,
+    "status": "в работе",
+    "critical": true
+  },
+  {
+    "id": 9,
+    "complex_id": 2,
+    "section_id": 4,
+    "material": "Окна",
+    "planned_date": "2026-11-01",
+    "actual_date": null,
+    "delay_days": 0,
+    "status": "не начато",
+    "critical": false
+  }
+]

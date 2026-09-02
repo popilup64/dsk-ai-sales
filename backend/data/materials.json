@@ -1,0 +1,79 @@
+[
+  {
+    "id": 1,
+    "complex_id": 1,
+    "material_name": "Плиты перекрытия ПК-63",
+    "quantity": 120,
+    "unit": "шт",
+    "min_required": 100,
+    "critical_threshold": 80,
+    "expected_delivery": "2026-09-10",
+    "status": "достаточно"
+  },
+  {
+    "id": 2,
+    "complex_id": 1,
+    "material_name": "Кирпич керамический",
+    "quantity": 4500,
+    "unit": "шт",
+    "min_required": 8000,
+    "critical_threshold": 5000,
+    "expected_delivery": "2026-09-20",
+    "status": "дефицит"
+  },
+  {
+    "id": 3,
+    "complex_id": 1,
+    "material_name": "Бетон М300",
+    "quantity": 80,
+    "unit": "м³",
+    "min_required": 150,
+    "critical_threshold": 100,
+    "expected_delivery": "2026-09-05",
+    "status": "дефицит"
+  },
+  {
+    "id": 4,
+    "complex_id": 2,
+    "material_name": "Арматура А500",
+    "quantity": 3200,
+    "unit": "пог. м",
+    "min_required": 3000,
+    "critical_threshold": 2500,
+    "expected_delivery": "2026-08-25",
+    "status": "достаточно"
+  },
+  {
+    "id": 5,
+    "complex_id": 2,
+    "material_name": "Опалубка алюминиевая",
+    "quantity": 45,
+    "unit": "м²",
+    "min_required": 200,
+    "critical_threshold": 100,
+    "expected_delivery": "2026-10-01",
+    "status": "критический дефицит"
+  },
+  {
+    "id": 6,
+    "complex_id": 2,
+    "material_name": "Цемент М500",
+    "quantity": 900,
+    "unit": "мешков",
+    "min_required": 500,
+    "critical_threshold": 300,
+    "expected_delivery": "2026-08-20",
+    "status": "достаточно"
+  },
+  {
+    "id": 7,
+    "complex_id": 2,
+    "material_name": "Бетон М400",
+    "quantity": 30,
+    "unit": "м³",
+    "min_required": 120,
+    "critical_threshold": 60,
+    "expected_delivery": "2026-09-15",
+    "status": "критический дефицит"
+  }
+]

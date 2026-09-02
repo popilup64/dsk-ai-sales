@@ -1,0 +1,57 @@
+[
+  {
+    "id": 1,
+    "name": "Подземный паркинг",
+    "price": 850000,
+    "price_per_m2": null,
+    "unit": "место",
+    "category": "паркинг",
+    "applicable_to": "all",
+    "description": "Отапливаемый паркинг с видеонаблюдением и охраной",
+    "available": true
+  },
+  {
+    "id": 2,
+    "name": "Кладовое помещение",
+    "price": 120000,
+    "price_per_m2": null,
+    "unit": "шт",
+    "category": "кладовка",
+    "applicable_to": "all",
+    "description": "Кладовка в подземном паркинге, 3-5 м²",
+    "available": true
+  },
+  {
+    "id": 3,
+    "name": "Ремонт «под ключ»",
+    "price": null,
+    "price_per_m2": 45000,
+    "unit": "м²",
+    "category": "ремонт",
+    "applicable_to": "all",
+    "description": "Полный ремонт с материалами: обои, ламинат, сантехника, кухня",
+    "available": true
+  },
+  {
+    "id": 4,
+    "name": "Ремонт «предчистовая»",
+    "price": null,
+    "price_per_m2": 22000,
+    "unit": "м²",
+    "category": "ремонт",
+    "applicable_to": "all",
+    "description": "Штукатурка, стяжка, разводка электрики и сантехники",
+    "available": true
+  },
+  {
+    "id": 5,
+    "name": "Ипотечное брокерство",
+    "price": 0,
+    "price_per_m2": null,
+    "unit": "услуга",
+    "category": "брокерство",
+    "applicable_to": "all",
+    "description": "Помощь в одобрении ипотеки в 5 банках-партнёрах",
+    "available": true
+  }
+]

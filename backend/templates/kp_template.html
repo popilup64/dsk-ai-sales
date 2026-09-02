@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>КП {{ complex_name }}</title>
+  <style>
+    body { font-family: 'DejaVu Sans', Arial, sans-serif; margin: 40px; color: #333; }
+    .header { border-bottom: 3px solid #1a5f2a; padding-bottom: 20px; margin-bottom: 30px; }
+    .header h1 { color: #1a5f2a; margin: 0; }
+    .section { margin-bottom: 25px; }
+    .section h2 { color: #1a5f2a; font-size: 16px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    td { padding: 8px 0; border-bottom: 1px solid #eee; }
+    td:first-child { color: #666; width: 40%; }
+    .price { font-size: 18px; font-weight: bold; color: #1a5f2a; }
+    .discount { color: #c62828; }
+    .final { font-size: 22px; font-weight: bold; color: #1a5f2a; margin-top: 15px; }
+    .risk { background: #fff3e0; border-left: 4px solid #ef6c00; padding: 12px; margin: 15px 0; }
+    .risk.critical { background: #ffebee; border-left-color: #c62828; }
+    .footer { margin-top: 40px; font-size: 12px; color: #999; border-top: 1px solid #ddd; padding-top: 15px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ</h1>
+    <p>ГК «ДСК» | {{ complex_name }} | {{ date }}</p>
+  </div>
+
+  <div class="section">
+    <h2>ОБЪЕКТ</h2>
+    <table>
+      <tr><td>Жилой комплекс</td><td>{{ complex_name }}</td></tr>
+      <tr><td>Адрес</td><td>{{ address }}</td></tr>
+      <tr><td>Класс</td><td>{{ complex_class }}</td></tr>
+      <tr><td>Плановая дата сдачи</td><td>{{ completion_date }}</td></tr>
+      <tr><td>Готовность</td><td>{{ progress }}%</td></tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>КВАРТИРА</h2>
+    <table>
+      <tr><td>Тип</td><td>{{ room_type }}-комнатная</td></tr>
+      <tr><td>Площадь</td><td>{{ area }} м²</td></tr>
+      <tr><td>Этаж</td><td>{{ floor }}</td></tr>
+      <tr><td>Отделка</td><td>{{ finishing }}</td></tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>ФИНАНСОВЫЕ УСЛОВИЯ</h2>
+    <table>
+      <tr><td>Цена за м²</td><td>{{ price_per_m2|format_price }} ₽</td></tr>
+      <tr><td>Стоимость лота</td><td class="price">{{ base_price|format_price }} ₽</td></tr>
+      <tr><td>Скидка ({{ discount_percent }}%)</td><td class="discount">−{{ discount_amount|format_price }} ₽</td></tr>
+      <tr><td>После скидки</td><td>{{ price_after_discount|format_price }} ₽</td></tr>
+      {% if services_total > 0 %}
+      <tr><td>Доп. услуги</td><td>{{ services_total|format_price }} ₽</td></tr>
+      {% endif %}
+    </table>
+    <div class="final">ИТОГО К ОПЛАТЕ: {{ final_price|format_price }} ₽</div>
+  </div>
+
+  {% if risks %}
+  <div class="section">
+    <h2>ИНФОРМАЦИЯ О СРОКАХ</h2>
+    {% for risk in risks %}
+    <div class="risk {{ risk.severity }}">
+      <strong>{{ risk.title }}</strong><br>
+      {{ risk.message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="footer">
+    Срок действия КП: 3 дня с момента формирования.<br>
+    Окончательные условия уточняйте у менеджера.<br>
+    ГК «ДСК» | {{ date }}
+  </div>
+</body>
+</html>

@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "rule_name": "Критическая задержка ЖБИ",
+    "condition_type": "delay",
+    "threshold": 30,
+    "severity": "critical",
+    "message_template": "Выявлена критическая задержка поставок материалов «{material}» на {delay_days} дней. Существует высокий риск сдвига сроков сдачи объекта.",
+    "affects_completion": true,
+    "estimated_delay_months": 2
+  },
+  {
+    "id": 2,
+    "rule_name": "Дефицит материалов",
+    "condition_type": "material_shortage",
+    "threshold": 0,
+    "severity": "warning",
+    "message_template": "На складе зафиксирован дефицит материала «{material}» (остаток: {quantity} {unit}). Возможна приостановка работ до пополнения запасов.",
+    "affects_completion": true,
+    "estimated_delay_months": 1
+  },
+  {
+    "id": 3,
+    "rule_name": "Критический дефицит материалов",
+    "condition_type": "material_critical",
+    "threshold": 0,
+    "severity": "critical",
+    "message_template": "КРИТИЧЕСКИЙ ДЕФИЦИТ: материал «{material}» (остаток: {quantity} {unit}, критический порог: {threshold}). Строительные работы могут быть остановлены в ближайшие 2 недели.",
+    "affects_completion": true,
+    "estimated_delay_months": 3
+  },
+  {
+    "id": 4,
+    "rule_name": "Низкая готовность при приближении срока",
+    "condition_type": "progress_low",
+    "threshold": 50,
+    "severity": "warning",
+    "message_template": "Готовность объекта составляет {progress}%, до плановой даты сдачи осталось менее 12 месяцев. Рекомендуется уточнить актуальные сроки у менеджера.",
+    "affects_completion": true,
+    "estimated_delay_months": 1
+  },
+  {
+    "id": 5,
+    "rule_name": "Незавершённые критические этапы",
+    "condition_type": "unfinished_critical",
+    "threshold": 0,
+    "severity": "critical",
+    "message_template": "К моменту формирования КП критические этапы строительства (фундамент, каркас) не завершены в срок. Высокая вероятность переноса сдачи объекта на {estimated_delay_months} мес.",
+    "affects_completion": true,
+    "estimated_delay_months": 3
+  }
+]

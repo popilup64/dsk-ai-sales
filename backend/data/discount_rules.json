@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1,
+    "payment_type": "наличные",
+    "discount_percent": 5.0,
+    "max_discount_rub": 500000,
+    "description": "Скидка при 100% оплате наличными",
+    "conditions": "полная оплата",
+    "requires_approval": false
+  },
+  {
+    "id": 2,
+    "payment_type": "ипотека",
+    "discount_percent": 0.0,
+    "max_discount_rub": 0,
+    "description": "Без скидки",
+    "conditions": "ипотечное кредитование",
+    "requires_approval": false
+  },
+  {
+    "id": 3,
+    "payment_type": "рассрочка",
+    "discount_percent": 2.0,
+    "max_discount_rub": 200000,
+    "description": "Скидка при рассрочке",
+    "conditions": "рассрочка до 12 мес",
+    "requires_approval": false
+  },
+  {
+    "id": 4,
+    "payment_type": "наличные_акция",
+    "discount_percent": 7.0,
+    "max_discount_rub": 700000,
+    "description": "Акционная скидка",
+    "conditions": "только с одобрения руководителя",
+    "requires_approval": true
+  }
+]

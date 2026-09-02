@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "complex_id": 1,
+    "section_number": 1,
+    "floors": 17,
+    "progress": 82,
+    "status": "строится"
+  },
+  {
+    "id": 2,
+    "complex_id": 1,
+    "section_number": 2,
+    "floors": 17,
+    "progress": 65,
+    "status": "строится"
+  },
+  {
+    "id": 3,
+    "complex_id": 1,
+    "section_number": 3,
+    "floors": 12,
+    "progress": 40,
+    "status": "строится"
+  },
+  {
+    "id": 4,
+    "complex_id": 2,
+    "section_number": 1,
+    "floors": 25,
+    "progress": 55,
+    "status": "строится"
+  },
+  {
+    "id": 5,
+    "complex_id": 2,
+    "section_number": 2,
+    "floors": 25,
+    "progress": 30,
+    "status": "строится"
+  }
+]

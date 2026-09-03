@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-}
+:root { --dsk-blue:#0a1f44; --dsk-gold:#c8a45c; --dsk-text:#1a1a2e; }
+body { font-family:'Inter',system-ui,sans-serif; background:#f6f6f8; color:var(--dsk-text); -webkit-font-smoothing:antialiased; }
+h1,h2,h3,.font-display { font-family:'Playfair Display',Georgia,serif; letter-spacing:-0.02em; line-height:1.05; }
+.dsk-card { background:linear-gradient(180deg,#fff 0%,#fdfcfa 100%); border:1px solid rgba(10,31,68,0.06); border-radius:16px; box-shadow:0 1px 3px rgba(10,31,68,0.04),0 8px 24px rgba(10,31,68,0.06); transition:box-shadow .2s,transform .15s; }
+.dsk-card:hover { box-shadow:0 12px 32px rgba(10,31,68,0.10); transform:translateY(-2px); }
+.btn-dsk { background:linear-gradient(135deg,#0a1f44,#061330); color:#fff; border:none; border-radius:8px; padding:14px 28px; font-weight:600; letter-spacing:.01em; box-shadow:0 4px 12px rgba(10,31,68,0.25); }
+.btn-dsk:hover { background:linear-gradient(135deg,#0d264f,#082144); box-shadow:0 6px 20px rgba(10,31,68,0.35); }

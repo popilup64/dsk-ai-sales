@@ -13,9 +13,18 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./dsk_sales.db"
 
-    # GigaChat
-    GIGACHAT_API_KEY: str = ""
+    # GigaChat API
+    # Получить можно в личном кабинете GigaChat: https://developers.sber.ru/
+    GIGACHAT_CLIENT_ID: str = ""           # Client ID из личного кабинета
+    GIGACHAT_CLIENT_SECRET: str = ""       # Client Secret из личного кабинета
+    GIGACHAT_AUTH_KEY: str = ""            # Или сразу Authorization Key (Base64)
     GIGACHAT_MODEL: str = "GigaChat"
+    GIGACHAT_TEMPERATURE: float = 0.3      # Низкая температура — строгий деловой стиль
+    GIGACHAT_MAX_TOKENS: int = 2048
+    GIGACHAT_TIMEOUT: int = 30
+
+    # Fallback: если GigaChat недоступен, использовать локальный шаблон
+    GIGACHAT_FALLBACK_ENABLED: bool = True
 
     # Business logic
     DEFAULT_CASH_DISCOUNT: float = 5.0

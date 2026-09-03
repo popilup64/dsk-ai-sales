@@ -1,0 +1,1 @@
+from backend.services.gigachat_service import GigaChatService, get_gigachat_service

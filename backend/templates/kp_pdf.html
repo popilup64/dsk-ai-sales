@@ -1,0 +1,76 @@
+# Коммерческое предложение — ГК «ДСК»
+<html><head><meta charset="utf-8"><style>
+@page { size: A4 portrait; margin: 18mm 14mm 22mm 14mm; @top-right { content: "ДСК AI • КП № {{ kp_id }}"; font-size: 8pt; color: #777; } @bottom-center { content: "Напечатано из системы ДСК AI — конфиденциально"; font-size: 7pt; color: #aaa; border-top: .3pt solid #ddd; padding-top: 4pt; } }
+body { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; color: #1a1a2e; font-size: 10pt; line-height: 1.35; }
+h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 22pt; color: #0a1f44; margin: 0 0 4pt; letter-spacing: -0.02em; border-left: 4pt solid #c8a45c; padding-left: 10pt; }
+.subtitle { color: #777; font-size: 9pt; }
+.table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+.table th { background: #0a1f44; color: #fff; text-align: left; padding: 6pt 8pt; font-weight: 600; }
+.table td { padding: 6pt 8pt; border-bottom: .4pt solid #ddd; }
+.table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.gold { color: #c8a45c; font-weight: 700; }
+.badge { background: #c8a45c; color: #0a1f44; font-size: 7pt; font-weight: 700; padding: 2pt 6pt; border-radius: 4pt; letter-spacing: .08em; text-transform: uppercase; display: inline-block; }
+</style></head><body>
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18pt;">
+  <div><div style="font-size:7pt;color:#777;text-transform:uppercase;letter-spacing:.12em;font-weight:700;">АО «СЗ «ДСК»</div><h1>ЖК «{{ complex_name }}» — КП № {{ kp_id }}</h1></div>
+  <div style="text-align:right;font-size:8pt;color:#777;">{{ address }}<br>{{ class_ }}-класс • Срок сдачи: {{ completion_date }}</div>
+</div>
+
+<div style="background:#f8f7f4;border:1pt solid #eae7dc;border-radius:10pt;padding:10pt 12pt;margin-bottom:14pt;">
+  <strong style="font-size:9pt;color:#0a1f44;">Объект:</strong> {{ address }}<br>
+  <strong style="font-size:9pt;color:#0a1f44;">Готовность:</strong> {{ progress }}% • <strong>Секция:</strong> {{ section_number }} • <strong>Этажность:</strong> {{ floor }} из {{ floor_total }}
+</div>
+
+<h2 style="font-family:'Playfair Display';font-size:14pt;color:#0a1f44;border-bottom:1.5pt solid #c8a45c;padding-bottom:4pt;margin-top:14pt;">1. Параметры квартиры</h2>
+<table class="table"><tr><th>Параметр</th><th>Значение</th></tr>
+<tr><td>Тип</td><td>{{ room_type }}-комнатная</td></tr>
+<tr><td>Площадь</td><td>{{ area }} м²</td></tr>
+<tr><td>Этаж</td><td>{{ floor }} из {{ floor_total }}</td></tr>
+<tr><td>Отделка</td><td>{{ finishing }}</td></tr>
+<tr><td>Материал стен</td><td>Монолитный каркас / кирпич</td></tr>
+</table>
+
+<h2 style="font-family:'Playfair Display';font-size:14pt;color:#0a1f44;border-bottom:1.5pt solid #c8a45c;padding-bottom:4pt;margin-top:14pt;">2. Планировка (схематично)</h2>
+<div style="border:1pt dashed #ccc;border-radius:8pt;padding:10pt;text-align:center;background:#faf9f7;color:#777;font-size:9pt;">Схема планировки — ссылка на сайт или фото<br><span class="gold">[файл: plan_{{ apartment_id }}.jpg]</span></div>
+
+<h2 style="font-family:'Playfair Display';font-size:14pt;color:#0a1f44;border-bottom:1.5pt solid #c8a45c;padding-bottom:4pt;margin-top:14pt;">3. Финансовые условия</h2>
+<table class="table">
+<tr><th>Статья</th><th>Сумма</th></tr>
+<tr><td>Цена за м²</td><td class="num">{{ price_per_m2_fmt }} ₽</td></tr>
+<tr><td>Стоимость лота</td><td class="num">{{ base_price_fmt }} ₽</td></tr>
+<tr><td>Скидка ({{ discount_percent }}%) — наличный расчёт</td><td class="num gold">−{{ discount_amount_fmt }} ₽</td></tr>
+<tr><td>После скидки</td><td class="num"><strong>{{ price_after_discount_fmt }} ₽</strong></td></tr>
+{% if services_total > 0 %}<tr><td>Доп. услуги</td><td class="num">{{ services_total_fmt }} ₽</td></tr>{% endif %}
+<tr style="font-weight:700;background:#f8f7f4;"><td>ИТОГО К ОПЛАТЕ</td><td class="num" style="font-size:12pt;color:#0a1f44;">{{ final_price_fmt }} ₽</td></tr>
+</table>
+
+<h2 style="font-family:'Playfair Display';font-size:14pt;color:#0a1f44;border-bottom:1.5pt solid #c8a45c;padding-bottom:4pt;margin-top:14pt;">4. График платежей</h2>
+<div style="background:#f8f7f4;padding:8pt 10pt;border-radius:8pt;font-size:9pt;">
+  <strong>Бронирование (30%):</strong> {{ "{:,}".format(((final_price|int) * 3 // 10)|int).replace(',', ' ') }} ₽ — при подписании договора.<br>
+  <strong>Основной платёж (70%):</strong> {{ "{:,}".format(((final_price|int) * 7 // 10)|int).replace(',', ' ') }} ₽ — через 3 месяца или при сдаче объекта (по соглашению).
+</div>
+
+{% if risk_summary and 'Риски не выявлены' not in risk_summary %}
+<h2 style="font-family:'Playfair Display';font-size:14pt;color:#b45309;border-bottom:1.5pt solid #c8a45c;padding-bottom:4pt;margin-top:14pt;">5. Информация о сроках и рисках</h2>
+<div style="background:#fff8e7;border:1pt solid #f0d58c;padding:8pt 10pt;border-radius:8pt;color:#5c3f0a;font-size:9pt;">{{ risk_summary }}</div>
+<p style="font-size:8pt;color:#777;margin-top:4pt;">Сроки предварительные. Уточняйте актуальные даты у персонального менеджера.</p>
+{% else %}
+<h2 style="font-family:'Playfair Display';font-size:14pt;color:#0a1f44;border-bottom:1.5pt solid #c8a45c;padding-bottom:4pt;margin-top:14pt;">5. Информация о сроках</h2>
+<p style="font-size:9pt;">Строительство идёт по графику. Плановая дата сдачи: <strong>{{ completion_date }}</strong>. Риски не выявлены.</p>
+{% endif %}
+
+<div style="margin-top:16pt;padding-top:8pt;border-top:1.5pt solid #c8a45c;">
+  <strong>Дополнительные услуги (по запросу):</strong> Парковка — 1,5 млн ₽ • Кладовая — 500 тыс ₽ • Ремонт — договорная.<br>
+  <span style="font-size:8pt;color:#777;">Отделка: {{ finishing }}. Актуальные цены — при бронировании.</span>
+</div>
+
+<div style="margin-top:14pt;background:#0a1f44;color:#fff;padding:10pt 12pt;border-radius:8pt;font-size:8pt;line-height:1.4;">
+  <strong style="color:#c8a45c;font-size:10pt;">⚠️ Срок действия КП: 3 дня с момента формирования.</strong><br>
+  Для бронирования и уточнения деталей обращайтесь к вашему менеджеру. <br>
+  Юридический адрес: г. Воронеж, ул. Пеше-Стрелецкая, 95. <br>
+  Телефон: <span class="gold">+7 (473) 263-99-77</span> • <strong>Ганиев Евгений Маратович</strong> — Руководитель проектов ДСК.
+</div>
+
+<p style="font-size:7pt;color:#aaa;margin-top:10pt;text-align:center;">© АО «СЗ «ДСК» • Коммерческое предложение сформировано системой DSK AI • Конфиденциально</p>
+</body></html>

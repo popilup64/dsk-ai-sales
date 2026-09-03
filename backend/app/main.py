@@ -6,8 +6,10 @@ DSK AI Sales — Backend API
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .config import get_settings
-from api.v1 import complexes, apartments, kp, risks, services
+from backend.app.config import get_settings
+from backend.api.v1 import complexes, apartments, kp, risks, services
+from backend.db.init_db import init_database
+
 settings = get_settings()
 
 app = FastAPI(
@@ -18,7 +20,7 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS — чтобы фронтенд мог обращаться к бэку
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:3000"],
@@ -35,9 +37,14 @@ app.include_router(risks.router, prefix="/api/v1", tags=["Риски"])
 app.include_router(services.router, prefix="/api/v1", tags=["Услуги"])
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Инициализация БД при старте"""
+    init_database()
+
+
 @app.get("/health", tags=["System"])
 async def health_check():
-    """Проверка работоспособности API"""
     return {
         "status": "ok",
         "app": settings.APP_NAME,

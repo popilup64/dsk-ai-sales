@@ -1,39 +1,43 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+import os
 
 
 class Settings(BaseSettings):
     """Конфигурация приложения"""
 
-    # App
     APP_NAME: str = "DSK AI Sales"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True
 
-    # Database
     DATABASE_URL: str = "sqlite:///./dsk_sales.db"
 
-    # GigaChat API
-    # Получить можно в личном кабинете GigaChat: https://developers.sber.ru/
-    GIGACHAT_CLIENT_ID: str = ""           # Client ID из личного кабинета
-    GIGACHAT_CLIENT_SECRET: str = ""       # Client Secret из личного кабинета
-    GIGACHAT_AUTH_KEY: str = ""            # Или сразу Authorization Key (Base64)
+    GIGACHAT_CLIENT_ID: str = ""
+    GIGACHAT_CLIENT_SECRET: str = ""
+    GIGACHAT_AUTH_KEY: str = ""
     GIGACHAT_MODEL: str = "GigaChat"
-    GIGACHAT_TEMPERATURE: float = 0.3      # Низкая температура — строгий деловой стиль
+    GIGACHAT_TEMPERATURE: float = 0.3
     GIGACHAT_MAX_TOKENS: int = 2048
     GIGACHAT_TIMEOUT: int = 30
-
-    # Fallback: если GigaChat недоступен, использовать локальный шаблон
     GIGACHAT_FALLBACK_ENABLED: bool = True
 
-    # Business logic
     DEFAULT_CASH_DISCOUNT: float = 5.0
     DEFAULT_CASH_DISCOUNT_MAX: float = 500_000
     RISK_DELAY_THRESHOLD_DAYS: int = 30
     KP_VALID_DAYS: int = 3
 
-    class Config:
-        env_file = ".env"
+    # Подхватываем .env: сначала из backend/, затем из корня — независимо от CWD
+    _here = os.path.dirname(__file__)
+    _candidates = [
+        os.path.join(_here, "..", ".env"),
+        os.path.join(_here, "..", "..", ".env"),
+    ]
+    _env_files = tuple(p for p in _candidates if os.path.exists(p))
+
+    model_config = SettingsConfigDict(
+        env_file=_env_files if _env_files else ".env",
+        extra="ignore"
+    )
 
 
 @lru_cache()

@@ -35,39 +35,26 @@ class GigaChatService:
 
     # ==================== OAuth2 Авторизация ====================
     def _get_access_token(self) -> str:
-        """Получает access_token через OAuth2"""
+        """Получает токен через SDK gigachat с постоянным auth_key"""
         if self.access_token and self.token_expires_at and datetime.now() < self.token_expires_at:
             return self.access_token
-
-        if settings.GIGACHAT_AUTH_KEY:
-            auth_key = settings.GIGACHAT_AUTH_KEY
-        else:
-            credentials = f"{settings.GIGACHAT_CLIENT_ID}:{settings.GIGACHAT_CLIENT_SECRET}"
-            auth_key = base64.b64encode(credentials.encode()).decode()
-
-        headers = {
-            "Authorization": f"Basic {auth_key}",
-            "RqUID": str(uuid.uuid4()),
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-
         try:
-            with httpx.Client(verify=False, timeout=10) as client:
-                response = client.post(
-                    GIGACHAT_OAUTH_URL,
-                    headers=headers,
-                    data="scope=GIGACHAT_API_PERS"
-                )
-                response.raise_for_status()
-                data = response.json()
-
-                self.access_token = data["access_token"]
-                expires_in = data.get("expires_in", 1800)
-                self.token_expires_at = datetime.now().timestamp() + expires_in - 60
-
-                return self.access_token
+            from gigachat import GigaChat
+            auth_key = settings.GIGACHAT_AUTH_KEY
+            if not auth_key:
+                raise Exception("GIGACHAT_AUTH_KEY не задан")
+            client = GigaChat(
+                auth_key=auth_key,
+                verify_ssl_certs=False,
+            )
+            token = client.get_token()
+            if not token:
+                raise Exception("Пустой токен от GigaChat SDK")
+            self.access_token = token
+            self.token_expires_at = datetime.now().timestamp() + 1800 - 60
+            return self.access_token
         except Exception as e:
-            print(f"⚠️ Ошибка авторизации GigaChat: {e}")
+            print(f"⚠️ Ошибка авторизации GigaChat (auth_key): {e}")
             raise
 
     # ==================== Построение промпта ====================
@@ -131,10 +118,14 @@ class GigaChatService:
         Returns:
             {"kp_text": str, "has_risks": bool, "risk_level": str, "source": "gigachat|fallback"}
         """
-        # Если GigaChat не настроен — сразу fallback
+        # Пытаемся через GigaChat даже при ошибках (принудительный режим)
         if not self.is_configured:
-            print("⚠️ GigaChat не настроен, используем fallback")
-            return self._generate_fallback(context)
+            print("⚠️ GigaChat не настроен, но пытаемся принудительно...")
+            # Принудительно устанавливаем configured = True, если ключи есть в окружении
+            from backend.app.config import get_settings
+            s = get_settings()
+            if s.GIGACHAT_CLIENT_ID or s.GIGACHAT_AUTH_KEY:
+                self.is_configured = True
 
         try:
             token = self._get_access_token()

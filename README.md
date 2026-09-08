@@ -1,6 +1,44 @@
 # DSK AI Sales — AI-помощник продаж ГК «ДСК»
 
+> **Монолит (Layered Monolith). Не микросервисы.** Единый деплой: `api/` → `core/` → `services/`. Без оркестрации.
+
 Полный цикл: анализ ERP-прогресса, персональные коммерческие предложения (КП) с GigaChat, контроль скидок, уведомления о рисках, поддержка менеджера и сравнение с конкурентами.
+
+## Структура папок (дерево)
+
+```
+dsk-ai-sales/
+├── .env                          # GIGACHAT_AUTH_KEY, модель, температура
+├── docker-compose.yml            # backend (8000) + frontend (5173)
+├── backend/
+│   ├── Dokerfile                 # python:3.12-slim
+│   ├── requirements.txt         # fastapi, sqlalchemy, gigachat, weasyprint
+│   ├── app/
+│   │   ├── config.py             # SettingsConfigDict (env_file=../.env)
+│   │   ├── main.py               # FastAPI + include_router(manager)
+│   │   └── ...
+│   ├── api/v1/
+│   │   ├── manager.py            # /manager/analyze + /competitors
+│   │   ├── kp.py, risks.py, ...
+│   ├── core/
+│   │   ├── manager_support.py    # OBJECTIONS_DB + analyze_dialog_gigachat()
+│   │   ├── competitors.py        # COMPETITORS_DB (Красногорск, Химки)
+│   │   ├── kp_engine_db.py       # риски + KP-расчёт
+│   ├── services/
+│   │   └── gigachat_service.py   # OAuth + generate_kp_text() + fallback
+│   ├── templates/
+│   │   └── kp_pdf.html           # A4, Playfair, золотые акценты
+│   ├── db/                       # SQLite init + session
+│   ├── models/                   # SQLAlchemy ORM
+│   └── schemas/                  # Pydantic (manager, kp, apartment)
+├── frontend/
+│   ├── Dokerfile                 # node:18-alpine
+│   ├── src/
+│   │   ├── App.jsx               # ManagerSupportBlock, renderMarkdown()
+│   │   ├── index.html            # Playfair Display + Inter
+│   │   └── ...
+└── docs/ARCHITECTURE.md         # почему монолит, FastAPI, React
+```
 
 ## Стек
 

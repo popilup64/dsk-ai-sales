@@ -5,7 +5,6 @@
 
 import json
 import uuid
-import base64
 from typing import Dict, Optional
 from datetime import datetime
 
@@ -18,7 +17,7 @@ settings = get_settings()
 
 # Константы API
 GIGACHAT_OAUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
-GIGACHAT_API_URL = "https://gigachat.devices.sberbank.ru/api/v1/chat/completions"
+GIGACHAT_API_URL = "https://api.giga.chat/v1/chat/completions"
 
 
 class GigaChatService:
@@ -33,28 +32,45 @@ class GigaChatService:
             settings.GIGACHAT_CLIENT_ID and settings.GIGACHAT_CLIENT_SECRET
         ) or bool(settings.GIGACHAT_AUTH_KEY)
 
-    # ==================== OAuth2 Авторизация ====================
+    # ==================== OAuth2 Авторизация (прямой запрос) ====================
     def _get_access_token(self) -> str:
-        """Получает токен через SDK gigachat с постоянным auth_key"""
+        """Получает токен через прямой OAuth-запрос с scope=GIGACHAT_API_PERS"""
         if self.access_token and self.token_expires_at and datetime.now() < self.token_expires_at:
             return self.access_token
+
+        auth_key = settings.GIGACHAT_AUTH_KEY
+        if not auth_key:
+            raise Exception("GIGACHAT_AUTH_KEY не задан")
+
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/json",
+            "RqUID": str(uuid.uuid4()),
+            "Authorization": f"Basic {auth_key}",
+        }
+        data = {"scope": "GIGACHAT_API_PERS"}   # обязательно для физических лиц
+
         try:
-            from gigachat import GigaChat
-            auth_key = settings.GIGACHAT_AUTH_KEY
-            if not auth_key:
-                raise Exception("GIGACHAT_AUTH_KEY не задан")
-            client = GigaChat(
-                auth_key=auth_key,
-                verify_ssl_certs=False,
-            )
-            token = client.get_token()
-            if not token:
-                raise Exception("Пустой токен от GigaChat SDK")
-            self.access_token = token
-            self.token_expires_at = datetime.now().timestamp() + 1800 - 60
-            return self.access_token
+            with httpx.Client(verify=False, timeout=10.0) as client:
+                resp = client.post(GIGACHAT_OAUTH_URL, headers=headers, data=data)
+                resp.raise_for_status()
+                token_data = resp.json()
+                token = token_data.get("access_token")
+                if not token:
+                    raise Exception(f"Токен не получен: {token_data}")
+                self.access_token = token
+
+                # expires_at приходит в миллисекундах
+                expires_at_ms = token_data.get("expires_at", 0)
+                if expires_at_ms:
+                    self.token_expires_at = datetime.fromtimestamp(expires_at_ms / 1000.0)
+                else:
+                    # запасное значение: 30 минут минус 1 минута
+                    self.token_expires_at = datetime.fromtimestamp(datetime.now().timestamp() + 1800 - 60)
+
+                return token
         except Exception as e:
-            print(f"⚠️ Ошибка авторизации GigaChat (auth_key): {e}")
+            print(f"⚠️ Ошибка получения токена: {e}")
             raise
 
     # ==================== Построение промпта ====================
@@ -121,7 +137,6 @@ class GigaChatService:
         # Пытаемся через GigaChat даже при ошибках (принудительный режим)
         if not self.is_configured:
             print("⚠️ GigaChat не настроен, но пытаемся принудительно...")
-            # Принудительно устанавливаем configured = True, если ключи есть в окружении
             from backend.app.config import get_settings
             s = get_settings()
             if s.GIGACHAT_CLIENT_ID or s.GIGACHAT_AUTH_KEY:
@@ -160,7 +175,6 @@ class GigaChatService:
 
             # Пытаемся извлечь JSON из ответа
             try:
-                # Иногда GigaChat оборачивает JSON в markdown
                 if "```json" in content:
                     content = content.split("```json")[1].split("```")[0].strip()
                 elif "```" in content:
@@ -170,7 +184,6 @@ class GigaChatService:
                 result["source"] = "gigachat"
                 return result
             except json.JSONDecodeError:
-                # Если не удалось распарсить JSON — берём весь текст как kp_text
                 return {
                     "kp_text": content,
                     "has_risks": context.get("risks", []),
@@ -180,6 +193,7 @@ class GigaChatService:
 
         except Exception as e:
             print(f"⚠️ Ошибка GigaChat: {e}")
+            print(f"🔧 FALLBACK ENABLED = {settings.GIGACHAT_FALLBACK_ENABLED}")
             if settings.GIGACHAT_FALLBACK_ENABLED:
                 return self._generate_fallback(context)
             raise
@@ -253,7 +267,7 @@ class GigaChatService:
 
         template = Template(template_str)
 
-        # Форматируем числа заранее (Jinja2 % с ' ломает строку)
+        # Форматируем числа
         def fmt(n):
             return f"{int(round(n)):,}".replace(",", " ")
         ctx["price_per_m2_fmt"] = fmt(ctx.get("price_per_m2", 0))
@@ -265,7 +279,6 @@ class GigaChatService:
         for s in ctx.get("services_breakdown", []):
             s["cost_fmt"] = fmt(s.get("cost", 0))
 
-        # Добавляем kp_id в контекст
         ctx["kp_id"] = datetime.now().strftime("%Y%m%d-%H%M")
 
         kp_text = template.render(**ctx)

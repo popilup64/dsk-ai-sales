@@ -98,6 +98,25 @@ function ComplexPage() {
   const [services, setServices] = useState([1])
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [typedText, setTypedText] = useState('')
+  const [typingDone, setTypingDone] = useState(false)
+
+  useEffect(() => {
+    if (!result?.kp_text) return
+    setTypedText('')
+    setTypingDone(false)
+    const full = result.kp_text
+    let i = 0
+    const interval = setInterval(() => {
+      i += 3
+      setTypedText(full.slice(0, i))
+      if (i >= full.length) {
+        clearInterval(interval)
+        setTypingDone(true)
+      }
+    }, 14)
+    return () => clearInterval(interval)
+  }, [result?.kp_text])
 
   useEffect(() => {
     axios.get(`${API}/complexes/${complexId}/apartments`).then(r => {
@@ -226,8 +245,14 @@ function ComplexPage() {
               {result && (
                 <div className="mt-6 border-t pt-6">
                   <h3 className="text-lg font-extrabold text-[#0a1f44] mb-3">Коммерческое предложение</h3>
-                  <div className="bg-[#fdfcfa] border border-[#e5e5eb] rounded-xl p-5 text-sm leading-relaxed whitespace-pre-wrap font-mono text-[#1a1a2e]">
-                    {result.kp_text || 'Текст КП сгенерирован. Нажмите «PDF» для загрузки.'}
+                  <div className="bg-gradient-to-br from-[#fdfcfa] to-[#fff8e7] border border-[#e5dcc8] rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className={`w-2 h-2 rounded-full ${typingDone ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+                      <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-600">{typingDone ? 'КП от GigaChat' : 'Генерация…'}</span>
+                    </div>
+                    <div id="kp-text-area" className="text-sm leading-loose text-[#1a1a2e] font-mono whitespace-pre-wrap min-h-[120px]">
+                      {typedText || ''}
+                    </div>
                   </div>
                   <div className="flex gap-3 mt-4">
                     <button onClick={handleDownloadPDF} className="btn-dsk">Скачать PDF</button>

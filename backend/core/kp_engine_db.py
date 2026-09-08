@@ -232,12 +232,12 @@ class KPEngineDB:
         risks = self.analyze_risks(apartment_id)
 
         if risks:
-            risk_summary = "\n\nВЫЯВЛЕННЫЕ РИСКИ:\n"
+            risk_summary = "\n\n**ВЫЯВЛЕННЫЕ РИСКИ:**\n\n"
             for r in risks:
                 icon = "🔴" if r["severity"] == "critical" else "🟡"
-                risk_summary += f"{icon} {r['title']}: {r['message']}\n"
+                risk_summary += f"• {icon} **{r['title']}** — {r['message']}\n"
         else:
-            risk_summary = "\n\nРиски не выявлены. Строительство идёт по графику."
+            risk_summary = "\n\n**Риски не выявлены.** Строительство идёт по графику."
 
         if kp["services_breakdown"]:
             services_text = "\n\nДОПОЛНИТЕЛЬНЫЕ УСЛУГИ:\n"

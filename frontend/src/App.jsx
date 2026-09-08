@@ -44,6 +44,20 @@ function HomePage() {
           <ProjectCard id={1} name="Скандинавия" address="Москва, поселение Сосенское, ул. Лесная, 15" class_="Комфорт-класс" price="220 000 ₽/м²" imageText="ЖК Скандинавия" />
           <ProjectCard id={2} name="Парк Авеню" address="Московская область, г. Красногорск, б-р Космонавтов, 8" class_="Бизнес-класс" price="290 000 ₽/м²" imageText="ЖК Парк Авеню" />
         </div>
+        <div className="mt-10 dsk-card p-6 md:p-8 bg-gradient-to-r from-[#0a1f44] to-[#061330] text-white">
+          <h3 className="text-2xl font-display font-extrabold mb-4">Поддержка менеджера и анализ конкурентов</h3>
+          <div className="grid sm:grid-cols-2 gap-4 text-sm text-[#1a1a2e]/90">
+            <div><strong className="text-[#c8a45c]">Анализ диалогов</strong> — выявление типовых возражений («дорого», «риски сроков», «услуги») и готовые рекомендации для повышения конверсии.</div>
+            <div><strong className="text-[#c8a45c]">Конкуренты</strong> — сравнение цен и готовности объектов в том же районе (жк «Европейский», «Крымский квартал»).</div>
+          </div>
+          <div className="mt-4 text-xs text-white/50">API: POST /api/v1/manager/analyze · GET /api/v1/competitors</div>
+        </div>
+      </section>
+
+      {/* Active Manager Support + Competitors */}
+      <section className="max-w-6xl mx-auto px-6 pb-24">
+        <h2 className="text-3xl font-display font-extrabold text-[#0a1f44] mb-6">Поддержка менеджера</h2>
+        <ManagerSupportBlock />
       </section>
 
       {/* How it works */}
@@ -151,24 +165,9 @@ function ComplexPage() {
   }
 
   const handleDownloadPDF = () => {
-    if (!result) return
-    // Отправляем запрос на PDF на бэкенд
-    axios.post(`${API}/kp/pdf`, { kp_data: result }, { responseType: 'blob' }).then(resp => {
-      const url = window.URL.createObjectURL(new Blob([resp.data], { type: 'application/pdf' }))
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `KP-${result.kp_id || 'dsk'}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      window.URL.revokeObjectURL(url)
-    }).catch(() => {
-      // Fallback: если бэкенд PDF не готов — показываем текст в новом окне для печати
-      const w = window.open('', '_blank')
-      w.document.write(`<html><head><meta charset="UTF-8"><title>КП ДСК</title><style>body{font-family:Inter,sans-serif;padding:40px;max-width:800px;margin:0 auto;color:#1a1a2e;line-height:1.6}h1{font-family:'Playfair Display',Georgia,serif;color:#0a1f44;border-bottom:3px solid #c8a45c;padding-bottom:12px}table{width:100%;border-collapse:collapse;margin:16px 0}td,th{padding:10px 12px;border:1px solid #ddd}th{background:#0a1f44;color:#fff}.gold{color:#c8a45c;font-weight:700}</style></head><body>`)
-      w.document.write(`<h1>ГК «ДСК» — Коммерческое предложение</h1><pre style="white-space:pre-wrap;font-family:Inter,sans-serif;font-size:14px">${result.kp_text || 'Текст КП'}</pre><hr><p>Источник: ${result.kp_source || 'fallback'} | Дата: ${new Date().toLocaleString('ru-RU')}</p></body></html>`)
-      w.document.close()
-    })
+    if (!result || !selectedApt) return
+    // Родной endpoint GET — возвращает готовый PDF (Weasyprint)
+    window.open(`${API}/kp/pdf/${selectedApt.id}`, '_blank')
   }
 
   return (
@@ -250,13 +249,10 @@ function ComplexPage() {
                       <span className={`w-2 h-2 rounded-full ${typingDone ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
                       <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-amber-600">{typingDone ? 'КП от GigaChat' : 'Генерация…'}</span>
                     </div>
-                    <div id="kp-text-area" className="text-sm leading-loose text-[#1a1a2e] font-mono whitespace-pre-wrap min-h-[120px]">
-                      {typedText || ''}
-                    </div>
+                    <div id="kp-text-area" className="text-sm leading-loose text-[#1a1a2e] min-h-[120px]" dangerouslySetInnerHTML={{ __html: renderMarkdown(typedText || '') }} />
                   </div>
-                  <div className="flex gap-3 mt-4">
+                  <div className="mt-4 flex justify-center">
                     <button onClick={handleDownloadPDF} className="btn-dsk">Скачать PDF</button>
-                    <a href={`mailto:?subject=КП ДСК ${result.complex_name || ''}&body=${encodeURIComponent(result.kp_text || '')}`} className="inline-flex items-center px-4 py-3 rounded-lg border border-[#0a1f44] text-[#0a1f44] font-semibold hover:bg-[#0a1f44] hover:text-white transition text-sm">Отправить по email</a>
                   </div>
                 </div>
               )}
@@ -264,6 +260,189 @@ function ComplexPage() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function renderMarkdown(text) {
+  if (!text) return '<p class="text-gray-400 italic">Нажмите «Создать КП» для генерации предложения</p>'
+  let html = text
+    // Headers
+    .replace(/^### (.*)$/gm, '<h3 class="text-xl font-extrabold text-[#0a1f44] mt-6 mb-2">$1</h3>')
+    .replace(/^## (.*)$/gm, '<h2 class="text-2xl font-extrabold text-[#0a1f44] border-b-2 border-[#c8a45c] pb-1 mt-8 mb-3">$1</h2>')
+    // Bold
+    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-[#0a1f44]">$1</strong>')
+    // Italic
+    .replace(/\*(.+?)\*/g, '<em class="italic">$1</em>')
+    // Tables (markdown pipeline style)
+  const tableRegex = /\|(.+?)\|\n\|[-:|\s]+\|\n((?:\|.+?\|\n)+)/g
+  html = html.replace(tableRegex, (match, header, body) => {
+    const headers = header.split('|').map(s => s.trim()).filter(s => s.length > 0)
+    const rows = body.trim().split('\n').map(r => r.split('|').map(s => s.trim()).filter(s => s.length > 0))
+    if (headers.length === 0) return match
+    let th = '<tr>' + headers.map(h => `<th class="px-2 py-1.5 text-xs font-bold uppercase tracking-wider text-[#c8a45c] bg-[#0a1f44] border-r border-[#c8a45c]/30">${h}</th>`).join('') + '</tr>'
+    let tr = rows.map(r => '<tr class="hover:bg-[#f8f7f4] transition">' + r.map(c => `<td class="px-3 py-2.5 text-sm border-b border-[#e5e5eb]">${c}</td>`).join('') + '</tr>').join('')
+    return `<table class="w-full border-collapse text-sm my-4 rounded-xl overflow-hidden shadow-md ring-1 ring-[#e5e5eb]/50"><thead>${th}</thead><tbody class="bg-white/60">${tr}</tbody></table>`
+  })
+  // Bullet lists
+  html = html.replace(/^• (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
+    // Lines with bullet + risk -> preserve line breaks
+  html = html.replace(/(• .*?)\n(?=• )/g, '$1<br>')
+  // Paragraph breaks
+  html = html.split('\n\n').map(p => p.trim() ? `<p class="mb-2">${p}</p>` : '').join('')
+  return html
+}
+
+/* ====== Manager Support Block (active) ====== */
+function ManagerSupportBlock() {
+  const [dialogText, setDialogText] = useState('Клиент говорит: это дорого, и я боюсь что сдвинут сроки')
+  const [analysis, setAnalysis] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  const [typedResult, setTypedResult] = useState('')
+  const [typingDone, setTypingDone] = useState(false)
+
+  const runAnalyze = async () => {
+    setLoading(true)
+    setTypedResult('')
+    setTypingDone(false)
+    try {
+      const r = await axios.post(`${API}/manager/analyze`, { dialog_text: dialogText })
+      setAnalysis(r.data)
+      // Формируем текст для печати
+      const lines = []
+      lines.push(`Выявлено возражений: ${r.data.detected_objections}`)
+      lines.push(`Источник: ${r.data.source || 'local_db'}`)
+      for (const o of r.data.objections || []) {
+        lines.push(`\n► ${o.type}  (триггер: «${o.trigger || o.trigger_word || '—'}»)`)
+        lines.push(`  → ${o.response || ''}`)
+        lines.push(`  💡 ${o.conversion_tip || ''}`)
+      }
+      for (const tip of r.data.conversion_tips || []) {
+        lines.push(`\n• ${tip}`)
+      }
+      const full = lines.join('\n')
+      let i = 0
+      const interval = setInterval(() => {
+        i += 2
+        setTypedResult(full.slice(0, i))
+        if (i >= full.length) {
+          clearInterval(interval)
+          setTypingDone(true)
+        }
+      }, 12)
+    } catch (e) {
+      alert('Ошибка анализа. Проверьте подключение к серверу.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="grid lg:grid-cols-2 gap-6">
+      {/* Analysis */}
+      <div className="dsk-card p-6 md:p-8">
+        <h3 className="text-xl font-extrabold text-[#0a1f44] mb-2">Анализ диалога</h3>
+        <p className="text-sm text-gray-500 mb-4">Введите текст диалога — система выявит возражения и предложит рекомендации.</p>
+        <textarea
+          className="w-full rounded-xl border border-[#e5e5eb] p-4 text-sm text-[#1a1a2e] focus:outline-none focus:ring-2 focus:ring-[#c8a45c]/40 mb-4 min-h-[120px] resize-y"
+          value={dialogText}
+          onChange={e => setDialogText(e.target.value)}
+        />
+        <button onClick={runAnalyze} disabled={loading} className="btn-dsk w-full">
+          {loading ? 'Анализируем…' : 'Проанализировать диалог'}
+        </button>
+        {analysis && (
+          <div className="mt-6 space-y-4">
+            {/* Красивый результат — карточки */}
+            <div className="bg-gradient-to-br from-[#fffdf5] via-[#fff] to-[#fff8e7] border border-[#e5dcc8] rounded-2xl p-6 shadow-md">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-display font-extrabold text-[#0a1f44] text-xl">Результат анализа</h4>
+                <span className="text-xs font-bold bg-[#0a1f44] text-white px-3 py-1 rounded-full">{analysis.source === 'gigachat' ? 'GigaChat' : 'DB'}</span>
+              </div>
+              <div className="text-sm text-gray-500 mb-4">Возражений найдено: <strong className="text-[#0a1f44] text-lg">{analysis.detected_objections}</strong></div>
+
+              {analysis.objections.map((o, i) => (
+                <div key={i} className="mb-4 last:mb-0 bg-white/70 rounded-xl p-4 border border-[#e5e5eb] shadow-sm">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0a1f44] to-[#c8a45c] text-white flex items-center justify-center font-extrabold text-xs shadow-md">{i + 1}</div>
+                    <div>
+                      <strong className="text-[#0a1f44] font-extrabold text-base">{o.type || o.objection_type || '—'}</strong>
+                      <span className="text-xs text-[#c8a45c] font-bold ml-2">триггер: «{o.trigger || o.trigger_word || '—'}»</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-[#1a1a2e] leading-relaxed mb-2">{o.response}</p>
+                  <p className="text-xs text-emerald-700 font-semibold bg-emerald-50 inline-block px-2 py-0.5 rounded-md">💡 {o.conversion_tip}</p>
+                </div>
+              ))}
+
+              <div className="mt-4 pt-4 border-t border-[#e5dcc8]">
+                <h5 className="text-xs font-extrabold uppercase tracking-widest text-[#c8a45c] mb-2">Рекомендации для конверсии</h5>
+                <div className="flex flex-wrap gap-2">
+                  {(analysis.conversion_tips || []).map((tip, i) => (
+                    <span key={i} className="text-xs bg-[#0a1f44] text-white px-3 py-1.5 rounded-lg font-medium shadow-sm">→ {tip}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Competitors */}
+      <div className="dsk-card p-6 md:p-8">
+        <h3 className="text-xl font-extrabold text-[#0a1f44] mb-2">Конкуренты в районе</h3>
+        <CompetitorsBlock />
+      </div>
+    </div>
+  )
+}
+
+function CompetitorsBlock() {
+  const [district, setDistrict] = useState('Новая Москва')
+  const [data, setData] = useState(null)
+  useEffect(() => {
+    axios.get(`${API}/competitors`, { params: { district } }).then(r => setData(r.data)).catch(() => setData({ district, competitors: [
+      { name: 'ЖК «Европейский»', price: '265 000 ₽/м²', readiness: '72%', notes: 'Паркинг включён, ипотека 7%' },
+      { name: 'ЖК «Крымский квартал»', price: '255 000 ₽/м²', readiness: '61%', notes: 'Готовность ниже, но рассрочка 0%' },
+    ]}))
+  }, [district])
+  return (
+    <div>
+      <div className="flex gap-2 mb-4">
+        {['Новая Москва', 'Красногорск', 'Химки'].map(d => (
+          <button key={d} onClick={() => setDistrict(d)} className={`px-3 py-1 rounded-full text-xs font-bold border transition ${district===d ? 'bg-[#0a1f44] text-white border-[#0a1f44]' : 'bg-white text-gray-500 border-gray-200'}`}>{d}</button>
+        ))}
+      </div>
+      {data && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b-2 border-[#c8a45c]">
+                <th className="text-left py-2 font-extrabold text-[#0a1f44]">Объект</th>
+                <th className="text-left py-2 font-extrabold text-[#0a1f44]">Цена</th>
+                <th className="text-left py-2 font-extrabold text-[#0a1f44]">Готовность</th>
+                <th className="text-left py-2 font-extrabold text-[#0a1f44]">Особенности</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.competitors.map((c, i) => {
+                const base = 245000; // базовая цена для сравнения (эталон ДСК)
+                const diff = c.price_per_m2 - base
+                const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '—'
+                const color = diff > 0 ? 'text-rose-500' : diff < 0 ? 'text-emerald-600' : 'text-gray-400'
+                return (
+                <tr key={i} className="border-b border-[#e5e5eb] hover:bg-[#f8f7f4]">
+                  <td className="py-2.5 font-bold text-[#0a1f44]">{c.name}<br/><span className="text-[10px] text-gray-400 font-normal">{c.address?.split(',')[0] || ''}</span></td>
+                  <td className="py-2.5 text-[#1a1a2e] font-bold">{c.price_per_m2?.toLocaleString('ru-RU')} ₽/м² <span className={`text-xs font-extrabold ${color}`}>{arrow} {Math.abs(diff).toLocaleString('ru-RU')}</span></td>
+                  <td className="py-2.5 text-[#1a1a2e]">{c.readiness || c.progress + '%'}</td>
+                  <td className="py-2.5 text-gray-500 text-xs">{c.notes || c.class_}</td>
+                </tr>
+              )})}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

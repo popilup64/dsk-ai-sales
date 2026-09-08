@@ -5,7 +5,8 @@
 
 import json
 import uuid
-from typing import Dict, Optional
+import logging
+from typing import Dict, Optional, List
 from datetime import datetime
 
 import httpx
@@ -14,6 +15,9 @@ from jinja2 import Template
 from backend.app.config import get_settings
 
 settings = get_settings()
+
+# Настройка логирования
+logger = logging.getLogger(__name__)
 
 # Константы API
 GIGACHAT_OAUTH_URL = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
@@ -70,10 +74,10 @@ class GigaChatService:
 
                 return token
         except Exception as e:
-            print(f"⚠️ Ошибка получения токена: {e}")
+            logger.error(f"⚠️ Ошибка получения токена: {e}")
             raise
 
-    # ==================== Построение промпта ====================
+    # ==================== Построение промпта для КП ====================
     def _build_prompt(self, context: Dict) -> str:
         """Собирает промпт из контекста для GigaChat"""
 
@@ -126,7 +130,7 @@ class GigaChatService:
 """
         return prompt
 
-    # ==================== Отправка в GigaChat ====================
+    # ==================== Отправка в GigaChat (генерация КП) ====================
     def generate_kp_text(self, context: Dict) -> Dict:
         """
         Генерирует текст КП через GigaChat или fallback.
@@ -136,7 +140,7 @@ class GigaChatService:
         """
         # Пытаемся через GigaChat даже при ошибках (принудительный режим)
         if not self.is_configured:
-            print("⚠️ GigaChat не настроен, но пытаемся принудительно...")
+            logger.warning("⚠️ GigaChat не настроен, но пытаемся принудительно...")
             from backend.app.config import get_settings
             s = get_settings()
             if s.GIGACHAT_CLIENT_ID or s.GIGACHAT_AUTH_KEY:
@@ -192,8 +196,8 @@ class GigaChatService:
                 }
 
         except Exception as e:
-            print(f"⚠️ Ошибка GigaChat: {e}")
-            print(f"🔧 FALLBACK ENABLED = {settings.GIGACHAT_FALLBACK_ENABLED}")
+            logger.error(f"⚠️ Ошибка GigaChat: {e}")
+            logger.info(f"🔧 FALLBACK ENABLED = {settings.GIGACHAT_FALLBACK_ENABLED}")
             if settings.GIGACHAT_FALLBACK_ENABLED:
                 return self._generate_fallback(context)
             raise
@@ -203,67 +207,38 @@ class GigaChatService:
         """Генерирует текст КП локально, без GigaChat"""
         ctx = context["gigachat_prompt_context"]
 
-        template_str = """КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ № {{ kp_id }}
-ГК «ДСК»
+        template_str = """Уважаемый клиент!
 
-═══════════════════════════════════════════════════
-ЖК «{{ complex_name }}» — {{ complex_class|capitalize }}-класс
-Адрес: {{ address }}
-Срок сдачи: {{ completion_date }}
-═══════════════════════════════════════════════════
+Группа компаний «ДСК» рада предложить Вам эксклюзивную возможность приобретения квартиры в ЖК {{ complex_class|capitalize }}-класса «{{ complex_name }}». Это современный комплекс по адресу {{ address }}, сочетающий передовые архитектурные решения и развитую инфраструктуру для комфортной жизни.
 
-Уважаемый клиент!
+Для Вас подобрана {{ room_type }}-комнатная квартира площадью {{ area }} м² на высоком {{ floor }} этаже из {{ floor_total }}. Планировка обеспечивает максимальное количество света и впечатляющие виды. Отделка: {{ finishing }}.
 
-Представляем вашему вниманию уникальное предложение в жилом комплексе «{{ complex_name }}» — современном объекте {{ complex_class }} класса, расположенном по адресу: {{ address }}.
+Финансовые условия:
+| Позиция | Сумма (₽) |
+| :--- | :--- |
+| Базовая стоимость квартиры | {{ base_price_fmt }} |
+| Скидка {{ discount_percent }}% (спецпредложение за наличный расчёт) | −{{ discount_amount_fmt }} |
+| **Итого за квартиру** | **{{ price_after_discount_fmt }}** |
+{% if services_total > 0 %}| Дополнительные услуги ({{ services_breakdown|map(attribute='name')|join(', ') }}) | {{ services_total_fmt }} |{% endif %}
+| **ИТОГО К ОПЛАТЕ** | **{{ final_price_fmt }}** |
 
-=== ПАРАМЕТРЫ КВАРТИРЫ ===
-• Тип:                {{ room_type }}-комнатная
-• Площадь:            {{ area }} м²
-• Этаж:               {{ floor }}
-• Отделка:            {{ finishing }}
+Мы ценим наше партнерство, поэтому зафиксировали для Вас скидку в размере {{ discount_amount_fmt }} рублей при полной оплате наличными.
 
-=== ФИНАНСОВЫЕ УСЛОВИЯ ===
-┌────────────────────────────────────────┐
-│ Цена за м²:           {{ price_per_m2_fmt }} ₽  │
-│ Стоимость лота:       {{ base_price_fmt }} ₽  │
-│ Скидка ({{ discount_percent }}%):         −{{ discount_amount_fmt }} ₽  │
-├────────────────────────────────────────┤
-│ После скидки:        {{ price_after_discount_fmt }} ₽  │
-{% if services_total > 0 %}
-│ Доп. услуги:         {{ services_total_fmt }} ₽  │
-{% endif %}
-├────────────────────────────────────────┤
-│ ИТОГО К ОПЛАТЕ:      {{ final_price_fmt }} ₽  │
-└────────────────────────────────────────┘
+=== Важное уведомление о статусе строительства ===
+Готовность объекта: {{ progress }}%. {% if risk_summary and 'Риски не выявлены' not in risk_summary %}{{ risk_summary }}{% else %}Строительство идёт по графику. Плановая дата сдачи: {{ completion_date }}.{% endif %}
 
-{% if services_breakdown %}
-=== ДОПОЛНИТЕЛЬНЫЕ УСЛУГИ ===
-{% for s in services_breakdown %}
-• {{ s.name }}: {{ s.cost_fmt }} ₽
-{% endfor %}
-{% endif %}
+Дополнительные услуги:
+{% if services_breakdown %}{% for s in services_breakdown %}• {{ s.name }}: {{ s.cost_fmt }} ₽{% endfor %}{% else %}• По запросу: паркинг, кладовка, ремонт — уточняйте у менеджера.{% endif %}
 
-{% if risk_summary and 'Риски не выявлены' not in risk_summary %}
-=== ИНФОРМАЦИЯ О СРОКАХ ===
-{{ risk_summary }}
-
-Мы ценим ваше доверие и предоставляем только актуальную информацию. Рекомендуем уточнить детали у персонального менеджера.
-{% else %}
-=== ИНФОРМАЦИЯ О СРОКАХ ===
-Строительство объекта идёт по графику. Плановая дата сдачи: {{ completion_date }}.
-{% endif %}
-
-{% if requires_approval %}
-⚠️ Данное предложение требует согласования руководителя отдела продаж.
-{% endif %}
-
-Срок действия КП: 3 дня с момента формирования.
-
-Для бронирования и уточнения деталей обращайтесь к вашему менеджеру.
+Данное предложение действительно в течение {{ kp_valid_days }} банковских дней. Для бронирования квартиры и фиксации цены просим связаться с нами для подготовки договора.
 
 С уважением,
 Отдел продаж ГК «ДСК»
-"""
+Контактное лицо: Ганиев Евгений Маратович — Руководитель проектов ДСК
+Телефон: +7 (495) 000-00-00
+Email: sales@dsk.ru
+
+Срок действия КП: 3 дня с момента формирования."""
 
         template = Template(template_str)
 
@@ -293,6 +268,7 @@ class GigaChatService:
             "source": "fallback"
         }
 
+    # ==================== Генерация PDF (уже была) ====================
     def generate_pdf(self, context: Dict, output_path: str = "/tmp/kp_dsk.pdf") -> str:
         from jinja2 import Template
         ctx = context.get("gigachat_prompt_context", context)
@@ -305,12 +281,99 @@ class GigaChatService:
         ctx["final_price_fmt"] = fmt(ctx.get("final_price", 0))
         for s in ctx.get("services_breakdown", []): s["cost_fmt"] = fmt(s.get("cost", 0))
         ctx["kp_id"] = datetime.now().strftime("%Y%m%d-%H%M")
+        # Преобразуем **слово** → <strong> в risk_summary и других текстовых поля для PDF
+        for key in ("risk_summary",):
+            if isinstance(ctx.get(key), str):
+                ctx[key] = ctx[key].replace("**", "<strong>").replace("**", "</strong>") if "**" in ctx[key] else ctx[key]
+        # Более надёжно: заменяем все **...**
+        for k, v in ctx.items():
+            if isinstance(v, str) and "**" in v:
+                # Простая замена: **текст** → <strong>текст</strong>
+                import re
+                ctx[k] = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", v)
+
         with open("/home/zhabee/dsk-ai-sales/backend/templates/kp_pdf.html", "r", encoding="utf-8") as f:
             html = Template(f.read()).render(**ctx)
         from weasyprint import HTML
         HTML(string=html).write_pdf(output_path)
         return output_path
 
+    # ==================== НОВЫЙ МЕТОД: анализ диалога ====================
+    def analyze_dialog(self, dialog_text: str) -> List[Dict]:
+        """
+        Отправить диалог в GigaChat и получить список возражений в формате JSON.
+        Возвращает массив объектов с полями:
+            - objection_type (str): "цена", "риски сроков", "допуслуги" или "оплата"
+            - trigger_word (str): ключевое слово, вызвавшее возражение
+            - response_template (str): готовый ответ менеджера
+            - conversion_tip (str или list): совет по конверсии
+            - recommendations (list, опционально): дополнительные рекомендации
+        При ошибке или недоступности GigaChat возвращает пустой список.
+        """
+        if not self.is_configured:
+            logger.warning("GigaChat не настроен, анализ через GigaChat недоступен.")
+            return []
+
+        prompt = f"""
+        Проанализируй диалог менеджера и клиента. Выяви возражения по следующим типам:
+        цена, риски сроков, дополнительные услуги (паркинг, кладовка, ремонт), оплата (ипотека, кредит, рассрочка).
+
+        Для каждого найденного возражения верни JSON-массив объектов с полями:
+        - "objection_type": один из ["цена", "риски сроков", "допуслуги", "оплата"]
+        - "trigger_word": ключевое слово, которое вызвало возражение (строка)
+        - "response_template": готовый ответ менеджера (строка)
+        - "conversion_tip": совет по увеличению конверсии (строка или массив строк)
+        - "recommendations": (опционально) массив рекомендаций (строки)
+
+        Если возражений нет, верни пустой массив [].
+        Диалог:
+        \"{dialog_text}\"
+
+        Верни только JSON-массив, без пояснений.
+        """
+
+        try:
+            token = self._get_access_token()
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            }
+            payload = {
+                "model": settings.GIGACHAT_MODEL,
+                "messages": [
+                    {"role": "system", "content": "Ты — профессиональный аналитик продаж. Отвечай только в JSON-формате."},
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0.3,  # для более детерминированного ответа
+                "max_tokens": 1000,
+            }
+            with httpx.Client(verify=False, timeout=settings.GIGACHAT_TIMEOUT) as client:
+                response = client.post(GIGACHAT_API_URL, headers=headers, json=payload)
+                response.raise_for_status()
+                data = response.json()
+
+            content = data["choices"][0]["message"]["content"]
+
+            # Извлечение JSON из ответа (если обёрнут в ```json ... ```)
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+
+            result = json.loads(content)
+            if isinstance(result, list):
+                return result
+            else:
+                logger.warning(f"GigaChat вернул не список, а {type(result)}. Игнорируем.")
+                return []
+        except json.JSONDecodeError as e:
+            logger.error(f"Ошибка парсинга JSON от GigaChat: {e}\nОтвет: {content if 'content' in locals() else ''}")
+            return []
+        except Exception as e:
+            logger.error(f"Ошибка при вызове GigaChat analyze_dialog: {e}", exc_info=True)
+            return []
+
+    # ==================== Определение уровня риска ====================
     def _detect_risk_level(self, context: Dict) -> str:
         """Определяет уровень риска из контекста"""
         risks = context.get("risks", [])

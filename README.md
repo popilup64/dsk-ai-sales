@@ -1,5 +1,9 @@
 # DSK AI Sales — AI-помощник продаж ГК «ДСК»
 
+> **Монолитная архитектура (Layered Monolith)** — не микросервисы. Всё в едином коде: `api/`, `core/`, `services/`, `models/`, `db/`, `schemas/`.
+
+**Что использовано:** Python 3.12 + FastAPI + SQLAlchemy (SQLite) + Pydantic; React 18 + Vite + Tailwind; GigaChat SDK (`gigachat`) с OAuth (`AUTH_KEY`); Weasyprint (PDF); Jinja2; Docker Compose.
+
 Полный цикл: анализ ERP-прогресса, персональные коммерческие предложения (КП) с GigaChat, контроль скидок, уведомления о рисках, поддержка менеджера и сравнение с конкурентами.
 
 ## Стек

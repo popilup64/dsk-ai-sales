@@ -58,7 +58,7 @@ cp .env.example .env
 #### Запуск сервера
 
 ```bash
-uvicorn app.main:app --reload --port 8000
+uvicorn backend.app.main:app --reload --port 8000
 ```
 
 API доступно по адресу: http://localhost:8000  

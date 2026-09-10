@@ -103,6 +103,9 @@ async def kp_pdf(apartment_id: int, db: Session = Depends(get_db)):
         selected_services=[]
     )
     gigachat = get_gigachat_service()
+    # 2) ВСТАВЛЯЕМ В 3 ПУНКТ PDF — идем дальше
+    kp_result = gigachat.generate_kp_text(context)
+    context["_kp_text_for_pdf"] = kp_result.get("kp_text") or ""
     pdf_path = f"/tmp/kp_dsk_{apartment_id}.pdf"
     try:
         gigachat.generate_pdf(context, pdf_path)

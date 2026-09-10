@@ -79,11 +79,59 @@ class GigaChatService:
 
     # ==================== Построение промпта для КП ====================
     def _build_prompt(self, context: Dict) -> str:
-        """Собирает промпт из контекста для GigaChat"""
-
         ctx = context["gigachat_prompt_context"]
-
+        # Жёсткая подмена: GigaChat не генерирует цифры, берёт из БД
+        bp = int(round(ctx.get("base_price", 0)))
+        disc = int(round(ctx.get("discount_amount", 0)))
+        after_disc = int(round(ctx.get("price_after_discount", bp - disc)))
+        final = int(round(ctx.get("final_price", bp - disc)))
+        svc_total = int(round(ctx.get("services_total", 0)))
+        ptype = ctx.get("payment_type", "наличный расчёт")
+        disc_text = f"{disc:,}".replace(",", " ") if disc > 0 else "0"
+        # Формируем таблицу прямо в промпте — GigaChat копирует её 1:1
+        services_lines = ""
+        for s in ctx.get("services_breakdown", []):
+            services_lines += f"\n| {s['name']} | {int(round(s['cost'])):,} ₽ |".replace(",", " ")
         prompt = f"""Ты — AI-аналитик отдела продаж ГК «ДСК». 
+Твоя задача: на основе предоставленных ERP-данных сформировать профессиональное коммерческое предложение (КП) для клиента. 
+ВАЖНО: используй ТОЛЬКО следующие цифры из БД — не придумывай и не округляй по-своему:
+- Базовая стоимость: {bp:,} ₽ (замени запятые на пробелы)
+- Скидка {ctx.get('discount_percent', 0)}% ({ptype}): − {disc_text} ₽ (если ипотека — скидка 0 ₽)
+- После скидки: {after_disc:,} ₽
+- Доп. услуги (если выбраны): {services_lines if services_lines else 'нет'}
+- ИТОГО К ОПЛАТЕ: {final:,} ₽
+Итоговая сумма в тексте КП ДОЛЖНА быть ровно {final:,} ₽. Не отклоняйся ни на рубль.
+
+=== ДАННЫЕ ОБ ОБЪЕКТЕ ===
+Жилой комплекс: {ctx['complex_name']}
+Класс: {ctx['complex_class']}
+Адрес: {ctx['address']}
+Плановая дата сдачи: {ctx['completion_date']}
+Готовность объекта: {ctx['progress']}%
+Секция: {ctx['section_number']}
+
+=== ДАННЫЕ О КВАРТИРЕ ===
+Тип: {ctx['room_type']}-комнатная
+Площадь: {ctx['area']} м²
+Этаж: {ctx['floor']}
+Отделка: {ctx['finishing']}
+Цена за м²: {ctx['price_per_m2']:,.0f} ₽
+
+=== ФИНАНСОВЫЕ УСЛОВИЯ (из БД — не меняй) ===
+Тип оплаты: {ptype}
+Базовая: {bp:,} ₽
+Скидка: {disc_text} ₽
+После скидки: {after_disc:,} ₽
+{ctx.get('services_text', '')}
+ИТОГО К ОПЛАТЕ: {final:,} ₽
+
+=== АНАЛИЗ РИСКОВ ===
+{ctx.get('risk_summary', 'Риски не выявлены.')}
+
+=== ЗАДАЧА ===
+Сформируй текст КП в деловом стиле. Должна быть таблица с точными цифрами выше. Упомяни выбранные услуги ({', '.join(s['name'] for s in ctx.get('services_breakdown', [])) or 'нет'}) и тип оплаты ({ptype}). Если ипотека — укажи, что скидка 0%, но фиксируется базовая цена.
+
+Ответ строго в формате JSON: {{"kp_text":"...", "has_risks":true/false, "risk_level":"none|warning|critical"}} 
 Твоя задача: на основе предоставленных ERP-данных сформировать профессиональное коммерческое предложение (КП) для клиента.
 
 === ДАННЫЕ ОБ ОБЪЕКТЕ ===
@@ -146,6 +194,9 @@ class GigaChatService:
             if s.GIGACHAT_CLIENT_ID or s.GIGACHAT_AUTH_KEY:
                 self.is_configured = True
 
+        # 1) СОХРАНЯЕМ ПРОМПТ В ПЕРЕМЕННУЮ (чтобы PDF использовал тот же текст КП)
+        context["_kp_text_for_pdf"] = ""  # временная переменная — будет заполнена результатом
+        context["_gigachat_prompt"] = self._build_prompt(context)
         try:
             token = self._get_access_token()
             prompt = self._build_prompt(context)
@@ -186,6 +237,9 @@ class GigaChatService:
 
                 result = json.loads(content)
                 result["source"] = "gigachat"
+                # 2) ЗАПОМИНАЕМ ВЕСЬ ПРОМПТ ОТ ПРЕВЬЮ — это текст, который пишется при нажатии «Создать КП»
+                context["_kp_text_for_pdf"] = result.get("kp_text", content)
+                # 3) В PDF ДО 3 ПУНКТА ВСТАВЛЯЕМ ЭТУ ПЕРЕМЕННУЮ — идем дальше
                 return result
             except json.JSONDecodeError:
                 return {
@@ -207,6 +261,15 @@ class GigaChatService:
         """Генерирует текст КП локально, без GigaChat"""
         ctx = context["gigachat_prompt_context"]
 
+        # ПРИНУДИТЕЛЬНОЕ совпадение: GigaChat не генерирует цифры — они уже в контексте из БД
+        # Заменяем любые числа в kp_text на точные из kp_data (чтобы PDF и КП были идентичны)
+        ctx = context.get("gigachat_prompt_context", context)
+        kp = context.get("kp_data") if isinstance(context.get("kp_data"), dict) else None
+        if kp:
+            for k in ("base_price", "price_after_discount", "discount_amount", "final_price", "services_total"):
+                if k in kp and kp[k] is not None:
+                    ctx.setdefault(k, kp[k])
+
         template_str = """Уважаемый клиент!
 
 Группа компаний «ДСК» рада предложить Вам эксклюзивную возможность приобретения квартиры в ЖК {{ complex_class|capitalize }}-класса «{{ complex_name }}». Это современный комплекс по адресу {{ address }}, сочетающий передовые архитектурные решения и развитую инфраструктуру для комфортной жизни.
@@ -216,13 +279,13 @@ class GigaChatService:
 Финансовые условия:
 | Позиция | Сумма (₽) |
 | :--- | :--- |
-| Базовая стоимость квартиры | {{ base_price_fmt }} |
-| Скидка {{ discount_percent }}% (спецпредложение за наличный расчёт) | −{{ discount_amount_fmt }} |
-| **Итого за квартиру** | **{{ price_after_discount_fmt }}** |
-{% if services_total > 0 %}| Дополнительные услуги ({{ services_breakdown|map(attribute='name')|join(', ') }}) | {{ services_total_fmt }} |{% endif %}
-| **ИТОГО К ОПЛАТЕ** | **{{ final_price_fmt }}** |
+| Базовая стоимость квартиры | {{ base_price_fmt }} ₽ |
+| Скидка ({{ discount_percent }}% — {{ 'спецпредложение за наличный расчёт' if discount_percent > 0 else 'без скидки — ипотека' }}) | {% if discount_amount > 0 %}− {{ discount_amount_fmt }} ₽{% else %}0 ₽{% endif %} |
+| Стоимость квартиры со скидкой | {{ price_after_discount_fmt }} ₽ |
+{% if services_total > 0 %}| Дополнительные услуги ({{ services_breakdown|map(attribute='name')|join(', ') }}) | {{ services_total_fmt }} ₽ |{% endif %}
+| **ИТОГО К ОПЛАТЕ** | **{{ final_price_fmt }} ₽** |
 
-Мы ценим наше партнерство, поэтому зафиксировали для Вас скидку в размере {{ discount_amount_fmt }} рублей при полной оплате наличными.
+Мы ценим наше партнерство. Скидка {{ discount_percent }}% фиксируется для типа оплаты <strong>{{ payment_type }}</strong>. При полной оплате скидка составляет {{ discount_amount_fmt }} рублей.
 
 === Важное уведомление о статусе строительства ===
 Готовность объекта: {{ progress }}%. {% if risk_summary and 'Риски не выявлены' not in risk_summary %}{{ risk_summary }}{% else %}Строительство идёт по графику. Плановая дата сдачи: {{ completion_date }}.{% endif %}
@@ -242,9 +305,18 @@ Email: sales@dsk.ru
 
         template = Template(template_str)
 
-        # Форматируем числа
+        # Форматируем числа из БД (не из ответа GigaChat)
         def fmt(n):
-            return f"{int(round(n)):,}".replace(",", " ")
+            try:
+                return f"{int(round(float(n))):,}".replace(",", " ")
+            except:
+                return str(n)
+        # Принудительно берем из kp_data, если доступно
+        kp_data = context.get("kp_data") or {}
+        for k in ("base_price", "price_after_discount", "discount_amount", "final_price", "services_total"):
+            val = kp_data.get(k) if isinstance(kp_data, dict) else ctx.get(k)
+            if val is not None:
+                ctx[f"{k}_fmt"] = fmt(val)
         ctx["price_per_m2_fmt"] = fmt(ctx.get("price_per_m2", 0))
         ctx["base_price_fmt"] = fmt(ctx.get("base_price", 0))
         ctx["discount_amount_fmt"] = fmt(ctx.get("discount_amount", 0))
@@ -268,35 +340,39 @@ Email: sales@dsk.ru
             "source": "fallback"
         }
 
-    # ==================== Генерация PDF (уже была) ====================
     def generate_pdf(self, context: Dict, output_path: str = "/tmp/kp_dsk.pdf") -> str:
         from jinja2 import Template
-        ctx = context.get("gigachat_prompt_context", context)
-        def fmt(n): return f"{int(round(n)):,}".replace(",", " ")
-        ctx["price_per_m2_fmt"] = fmt(ctx.get("price_per_m2", 0))
-        ctx["base_price_fmt"] = fmt(ctx.get("base_price", 0))
-        ctx["discount_amount_fmt"] = fmt(ctx.get("discount_amount", 0))
-        ctx["price_after_discount_fmt"] = fmt(ctx.get("price_after_discount", 0))
-        ctx["services_total_fmt"] = fmt(ctx.get("services_total", 0))
-        ctx["final_price_fmt"] = fmt(ctx.get("final_price", 0))
-        for s in ctx.get("services_breakdown", []): s["cost_fmt"] = fmt(s.get("cost", 0))
-        ctx["kp_id"] = datetime.now().strftime("%Y%m%d-%H%M")
-        # Преобразуем **слово** → <strong> в risk_summary и других текстовых поля для PDF
-        for key in ("risk_summary",):
-            if isinstance(ctx.get(key), str):
-                ctx[key] = ctx[key].replace("**", "<strong>").replace("**", "</strong>") if "**" in ctx[key] else ctx[key]
-        # Более надёжно: заменяем все **...**
-        for k, v in ctx.items():
-            if isinstance(v, str) and "**" in v:
-                # Простая замена: **текст** → <strong>текст</strong>
-                import re
-                ctx[k] = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", v)
-
+        # ТОЛЬКО временные переменные из БД (из превью генерации) — НИКАКОЙ генерации в PDF
+        kp = context.get("kp_data") or {}
+        def fmt(n): return f"{int(round(float(n) if n is not None else 0)):,}".replace(",", " ") if (n := float(n) if n is not None else 0) > 0 else fmt(0)
+        # Простое форматирование
+        def fmt_simple(x): return f"{int(round(float(x))):,}".replace(",", " ") if x is not None else "0 ₽"
+        base_pdf = fmt_simple(kp.get("base_price") or 0)
+        has_disc = (str(context.get("payment_type", "")).lower() == "наличные") or float(kp.get("discount_percent", 0)) > 0
+        disc_pdf = ("− " + fmt_simple(kp.get("discount_amount") or 0) + " ₽") if has_disc and float(kp.get("discount_amount", 0)) > 0 else "0 ₽"
+        after_disc_pdf = fmt_simple((float(kp.get("base_price") or 0) - float(kp.get("discount_amount") or 0)))
+        svc_pdf = fmt_simple(kp.get("services_total", 0)) if float(kp.get("services_total", 0)) > 0 else "—"
+        final_pdf = fmt_simple(kp.get("final_price") or (float(kp.get("base_price", 0) or 0) - float(kp.get("discount_amount", 0) or 0) + float(kp.get("services_total", 0) or 0)))
+        # 4 временные переменные для шаблона
+        ctx = {
+            "complex_name": context.get("complex_name", "ДСК"),
+            "address": context.get("address", ""),
+            "kp_id": context.get("kp_id", "-"),
+            "base_price_pdf": base_pdf,
+            "after_discount_pdf": after_disc_pdf,
+            "discount_pdf": disc_pdf,
+            "services_pdf": svc_pdf,
+            "final_pdf": final_pdf,
+            "discount_percent": kp.get("discount_percent", 0) or 0,
+            "_kp_text_for_pdf": context.get("_kp_text_for_pdf") or "",
+            "final_price": kp.get("final_price", 0),
+        }
         with open("/home/zhabee/dsk-ai-sales/backend/templates/kp_pdf.html", "r", encoding="utf-8") as f:
             html = Template(f.read()).render(**ctx)
         from weasyprint import HTML
         HTML(string=html).write_pdf(output_path)
         return output_path
+    # ==================== НОВЫЙ МЕТОД: анализ диалога ====================
 
     # ==================== НОВЫЙ МЕТОД: анализ диалога ====================
     def analyze_dialog(self, dialog_text: str) -> List[Dict]:
@@ -315,15 +391,12 @@ Email: sales@dsk.ru
             return []
 
         prompt = f"""
-        Проанализируй диалог менеджера и клиента. Выяви возражения по следующим типам:
-        цена, риски сроков, дополнительные услуги (паркинг, кладовка, ремонт), оплата (ипотека, кредит, рассрочка).
-
-        Для каждого найденного возражения верни JSON-массив объектов с полями:
-        - "objection_type": один из ["цена", "риски сроков", "допуслуги", "оплата"]
-        - "trigger_word": ключевое слово, которое вызвало возражение (строка)
-        - "response_template": готовый ответ менеджера (строка)
-        - "conversion_tip": совет по увеличению конверсии (строка или массив строк)
-        - "recommendations": (опционально) массив рекомендаций (строки)
+        Проанализируй диалог менеджера и клиента. Выяви ВСЕ возражения, даже неявные (client сравнивает с другими ГК, боится задержек, сомневается в отделке, спрашивает про рассрочку). Не используй жёсткий список типов — определи сам на основе текста. Верни JSON-массив объектов с полями:
+        - "objection_type": строка (например «смена застройщика», «цена», «риски сроков», «оплата», «допуслуги» или любая другая)
+        - "trigger_word": ключевое слово из диалога
+        - "response_template": готовый ответ менеджера (2-3 предложения)
+        - "conversion_tip": конкретный совет по конверсии
+        - "recommendations": массив строк (опционально)
 
         Если возражений нет, верни пустой массив [].
         Диалог:

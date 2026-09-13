@@ -117,12 +117,4 @@ sed -i '1d' docker-compose.yml
 docker-compose build && docker-compose up -d
 ```
 
-**Env vars (root `.env` only):**
-```
-GIGACHAT_AUTH_KEY=<key>
-GIGACHAT_MODEL=GigaChat-3-Ultra
-GIGACHAT_TEMPERATURE=0.3
-GIGACHAT_FALLBACK_ENABLED=True
-```
-
 Сделано одним разработчиком в одном репо. Без внешней оркестрации. Один `docker-compose.yml`. Один `.env`. Один `main.py`. PDF из HTML; AI из SDK + fallback; UI из React + Tailwind.

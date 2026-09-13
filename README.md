@@ -1,14 +1,14 @@
-# DSK AI Sales — Monolith Sales Engine (Layered)
+# DSK AI Sales — Монолитный движок продаж (слойный)
 
-> **Not microservices. One deploy unit.** Layers: `api/` → `core/` → `services/` → `db/` / `models/` / `schemas/`. FastAPI serves; SQLAlchemy (SQLite) persists; Jinja2 renders PDF; GigaChat generates text; React renders the interface. No orchestration, no separate DB containers.
+> **Не микросервисы. Один деплойный юнит.** Слои: `api/` → `core/` → `services/` → `db/` / `models/` / `schemas/`. FastAPI обслуживает; SQLAlchemy (SQLite) хранит; Jinja2 формирует PDF; GigaChat генерирует текст; React рисует интерфейс. Без оркестрации, без отдельных контейнеров БД.
 
 ---
 
-## 1. What this is — architecture (not a feature list)
+## 1. Что это — архитектура (не список фич)
 
-A layered monolith that takes simulated ERP progress (JBI schedules, material balances, apartment stock), calculates a personalized commercial proposal (KP), checks manager objections, compares with open competitor DB, and produces a PDF offer with a dynamic SVG floor-plan.
+Слойный монолит, который берет симулированный прогресс ERP (JBI schedules, material balances, apartment stock), рассчитывает персональное КП, проверяет возражения менеджера, сравнивает с открытой БД конкурентов, и выдает PDF-предложение с динамической SVG-планировкой.
 
-**Why monolith:** The domain is one continuous pipeline (ERP data → KP calculation → risk analysis → text generation → PDF). Splitting into services would add network boundaries without independent scaling needs. The deck is one build: `docker-compose up` gives backend (8000) + frontend (5173).
+**Почему монолит:** Домен — один непрерывный пайплайн (ERP-данные → расчёт КП → анализ рисков → генерация текста → PDF). Разделение на сервисы добавило бы сетевые границы без независимой потребности в масштабировании. Сборка — один юнит: `docker-compose up` gives backend (8000) + frontend (5173).
 
 **Module boundaries (hard):**
 - `api/`: HTTP surface. `manager.py` (dialog analysis + competitor lookup), `kp.py` (PDF endpoint + data), `risks.py`. Keeps controllers thin.
@@ -19,7 +19,7 @@ A layered monolith that takes simulated ERP progress (JBI schedules, material ba
 
 ---
 
-## 2. Stack (exact versions, not approximate)
+## 2. Стектрей (точные версии, не примерно)
 
 | Layer | Component | Notes |
 |---|---|---|
@@ -36,7 +36,7 @@ A layered monolith that takes simulated ERP progress (JBI schedules, material ba
 
 ---
 
-## 3. Project structure (file-level)
+## 3. Структура проекта (уровень файлов)
 
 ```
 dsk-ai-sales/
@@ -76,17 +76,17 @@ dsk-ai-sales/
 
 ---
 
-## 4. The pipeline (how a request travels)
+## 4. Пайплайн (как проходит запрос)
 
-1. **ERP / DB:** `models/` + `db/` load simulated progress (JBI, material balance, apartment counts).
+1. **ERP / БД:** `models/` + `db/` load simulated progress (JBI, material balance, apartment counts).
 2. **Core:** `kp_engine_db.calculate_kp()` computes price, discount tiers, progress. `analyze_risks()` applies 5 rules (JBI delay >30d, material deficit, low progress, unfinished critical stages, delay >30d).
-3. **Service:** `gigachat_service.generate_pdf()` builds `kp_pdf.html` with Jinja2 (sections 1–6), runs Weasyprint → bytes. If SDK unavailable: `_generate_fallback()` produces same structure from template.
+3. **Сервис:** `gigachat_service.generate_pdf()` builds `kp_pdf.html` with Jinja2 (sections 1–6), runs Weasyprint → bytes. Если SDK недоступен: `_generate_fallback()` produces same structure from template.
 4. **API:** `GET /api/v1/kp/pdf/{apartment_id}` returns `Response(content=pdf_bytes, media_type="application/pdf")`.
 5. **Frontend:** `App.jsx` renders markdown, plays `typedText` animation, shows competitor comparison (▲/▼ arrows), downloads PDF via `handleDownloadPDF()`.
 
 ---
 
-## 5. Critical outputs (verified, not aspirational)
+## 5. Ключевые выходы (проверено, не декларативно)
 
 ### Section 2 — SVG floor-plan (multi-row, no overlap)
 `backend/templates/kp_pdf.html`: `viewBox="0 0 400 280"`, two rows (`y=45` / `y=125` for 3+; `y=45` / `y=135` for 2-comn.). Blocks have correct dynamic areas (`{{ (area * 0.55)|round|int }} m²` etc.). Gold strokes `#c8a45c`, rounded rects `rx=5`. `</svg></div>` correct.
@@ -99,7 +99,7 @@ Playfair headings (`font-family:Playfair Display`), Inter body. Footer: `+7 (473
 
 ---
 
-## 6. What is fixed (issues I hit — and did not paper over)
+## 6. Что исправлено (проблемы, с которыми столкнулся — не замазал)
 
 | Symptom | Cause | Fix (file) |
 |---|---|---|
@@ -116,7 +116,7 @@ Playfair headings (`font-family:Playfair Display`), Inter body. Footer: `+7 (473
 
 ---
 
-## 7. Environment / start
+## 7. Окружение / запуск
 
 ```bash
 # Local (no Docker — this environment lacks daemon)
@@ -143,14 +143,14 @@ GIGACHAT_FALLBACK_ENABLED=True
 
 ---
 
-## 8. What I do not do (constraints)
+## 8. Чего не делаю (ограничения)
 
-- Do **not** edit `gigachat` package (user instruction: “не трогай GigaChat”).
-- Do **not** split into microservices (user: layered monolith).
-- Do **not** change `.env` to backend/only; root is the contract.
-- Do **not** run `ALTER TABLE` on `floor_plan`; keep model/DB sync disabled.
-- Do **not** remove SVG plan in favor of table-only (layout A rejected; multi-row SVG restored).
+- Не редактирую пакет `gigachat` (пользователь: “не трогай GigaChat”).
+- Не делю на микросервисы (пользователь: слоистый монолит).
+- Не меняю `.env` только под backend; корень — контракт.
+- Не запускаю `ALTER TABLE` on `floor_plan`; модель/БД синхронны отключены.
+- Не удаляю SVG-план ради таблицы (layout A отклонён; многорядный SVG восстановлен).
 
 ---
 
-Built by a single developer on one repo. No external orchestration. One `docker-compose.yml`. One `.env`. One `main.py`. PDF comes from HTML; AI comes from SDK + fallback; UI comes from React + Tailwind.
+Сделано одним разработчиком в одном репо. Без внешней оркестрации. Один `docker-compose.yml`. Один `.env`. Один `main.py`. PDF из HTML; AI из SDK + fallback; UI из React + Tailwind.

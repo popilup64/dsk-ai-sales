@@ -164,11 +164,37 @@ function ComplexPage() {
     }
   }
 
-  const handleDownloadPDF = () => {
-    if (!result || !selectedApt) return
-    // Родной endpoint GET — возвращает готовый PDF (Weasyprint)
-    window.open(`${API}/kp/pdf/${selectedApt.id}`, '_blank')
+  const handleDownloadPDF = async () => {
+  if (!result?.kp_text || !selectedApt) {
+    alert('Сначала сформируйте КП')
+    return
   }
+  try {
+    const res = await axios.post(
+      `${API}/kp/pdf`,
+      {
+        kp_text: result.kp_text,          // ← тот же текст, что в превью
+        apartment_id: selectedApt.id,
+        payment_type: payment,            // 'наличные' | 'ипотека'
+        selected_services: services,      // [1, 4] и т.п.
+      },
+      { responseType: 'blob' }
+    )
+    const url = URL.createObjectURL(
+      new Blob([res.data], { type: 'application/pdf' })
+    )
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `KP-${selectedApt.id}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('PDF error', e)
+    alert('Не удалось сформировать PDF')
+  }
+}
 
   return (
     <div className="min-h-screen bg-[#f6f6f8]">

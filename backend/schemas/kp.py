@@ -27,14 +27,6 @@ class KPRequest(BaseModel):
     client_name: Optional[str] = ""
 
 
-class KPTextPayload(BaseModel):
-    """Payload для POST /kp/pdf — текст КП, уже сгенерированный превью."""
-    kp_text: str
-    apartment_id: int
-    payment_type: str = "наличные"
-    selected_services: List[int] = []
-
-
 class KPResponse(BaseModel):
     kp_id: str
     complex_name: str
@@ -44,7 +36,7 @@ class KPResponse(BaseModel):
     area: float
     floor: str
     finishing: str
-    price_per_m2: float
+    price_per_m2: int
     base_price: float
     discount_percent: float
     discount_amount: float
@@ -57,7 +49,7 @@ class KPResponse(BaseModel):
     requires_approval: bool
     completion_date: str
     progress: float
-    kp_text: Optional[str] = None
-    kp_source: str = "fallback"
+    kp_text: Optional[str] = None       # ← Текст от GigaChat / fallback
+    kp_source: str = "fallback"         # ← gigachat | fallback
     pdf_url: Optional[str] = None
     status: str

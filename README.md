@@ -116,5 +116,3 @@ curl -X POST http://localhost:8000/api/v1/manager/analyze \
 sed -i '1d' docker-compose.yml
 docker-compose build && docker-compose up -d
 ```
-
-Сделано одним разработчиком в одном репо. Без внешней оркестрации. Один `docker-compose.yml`. Один `.env`. Один `main.py`. PDF из HTML; AI из SDK + fallback; UI из React + Tailwind.

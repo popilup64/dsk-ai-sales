@@ -30,5 +30,6 @@ class Apartment(Base, TimestampMixin):
     price_per_m2 = Column(Integer, nullable=False)
     status = Column(Enum(ApartmentStatus), default=ApartmentStatus.свободна)
     finishing = Column(Enum(FinishingType), default=FinishingType.без_отделки)
+    floor_plan = Column(String(500), default="Гостиная 32 м², Спальня 18 м², Кухня 9 м² — ИТОГО: ~58 м²")  # SQLite not migrated
 
     section = relationship("Section", back_populates="apartments")

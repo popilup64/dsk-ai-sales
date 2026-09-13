@@ -26,7 +26,44 @@ th,td{font-size:9.5pt}
 <tr><td>Материал стен</td><td>Монолитный каркас / кирпич</td></tr></table>
 
 <div class="section">2. Планировка</div>
-<div style="border:1pt dashed #ccc;border-radius:8pt;padding:14pt;text-align:center;background:#faf9f7;color:#777;font-size:9pt"><div style="font-family:'Playfair Display',Georgia,serif;font-size:14pt;color:#0a1f44;margin-bottom:4pt">Планировка {{ room_type }}-комн.</div>Схематичный план — файл: plan_{{ apartment_id }}.jpg</div>
+<div style="margin:8pt 0">
+  <svg width="100%" height="280" viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg" style="background:#fdfcfa;border:1pt dashed #ccc;border-radius:8pt;padding:12pt;display:block;font-family:Playfair Display,Georgia,serif;">
+  <text x="200" y="22" text-anchor="middle" font-size="13" fill="#0a1f44" font-weight="bold">Планировка {{ room_type }}-комн. — {{ area }} м²</text>
+  <!-- Для 2-комн: Гостиная (55%), Спальня (30%), Кухня (15%) -->
+  {% if room_type == "2" %}
+  <rect x="30" y="45" width="160" height="70" rx="5" fill="#f8f7f4" stroke="#c8a45c" stroke-width="2.5"/>
+  <text x="110" y="78" text-anchor="middle" font-size="10" fill="#0a1f44" font-weight="bold">Гостиная</text>
+  <text x="110" y="96" text-anchor="middle" font-size="9" fill="#777">{{ (area * 0.55)|round|int }} м²</text>
+  <rect x="210" y="45" width="160" height="70" rx="5" fill="#fff8e7" stroke="#c8a45c" stroke-width="2.5"/>
+  <text x="290" y="78" text-anchor="middle" font-size="10" fill="#0a1f44" font-weight="bold">Спальня</text>
+  <text x="290" y="96" text-anchor="middle" font-size="9" fill="#777">{{ (area * 0.30)|round|int }} м²</text>
+  <rect x="30" y="135" width="160" height="70" rx="5" fill="#fff5e6" stroke="#c8a45c" stroke-width="2.5"/>
+  <text x="110" y="168" text-anchor="middle" font-size="10" fill="#0a1f44" font-weight="bold">Кухня</text>
+  <text x="110" y="186" text-anchor="middle" font-size="9" fill="#777">{{ (area * 0.15)|round|int }} м²</text>
+  <!-- Для 3+: делим на 4 части -->
+  {% elif room_type == "3+" %}
+  <rect x="30" y="45" width="160" height="60" rx="5" fill="#f8f7f4" stroke="#c8a45c" stroke-width="2.5"/>
+  <text x="110" y="74" text-anchor="middle" font-size="9" fill="#0a1f44" font-weight="bold">Гостиная</text>
+  <text x="110" y="90" text-anchor="middle" font-size="9" fill="#777">{{ (area * 0.40)|round|int }} м²</text>
+  <rect x="210" y="45" width="160" height="60" rx="5" fill="#fff8e7" stroke="#c8a45c" stroke-width="2.5"/>
+  <text x="290" y="74" text-anchor="middle" font-size="9" fill="#0a1f44" font-weight="bold">Спальня 1</text>
+  <text x="290" y="90" text-anchor="middle" font-size="9" fill="#777">{{ (area * 0.25)|round|int }} м²</text>
+  <rect x="30" y="125" width="160" height="60" rx="5" fill="#fff8e7" stroke="#c8a45c" stroke-width="2.5"/>
+  <text x="110" y="154" text-anchor="middle" font-size="9" fill="#0a1f44" font-weight="bold">Спальня 2</text>
+  <text x="110" y="170" text-anchor="middle" font-size="9" fill="#777">{{ (area * 0.20)|round|int }} м²</text>
+  <rect x="210" y="125" width="160" height="60" rx="5" fill="#fff5e6" stroke="#c8a45c" stroke-width="2.5"/>
+  <text x="290" y="154" text-anchor="middle" font-size="9" fill="#0a1f44" font-weight="bold">Кухня</text>
+  <text x="290" y="170" text-anchor="middle" font-size="9" fill="#777">{{ (area * 0.15)|round|int }} м²</text>
+  {% else %}
+  <!-- Общий fallback -->
+  <rect x="30" y="45" width="340" height="60" rx="5" fill="#f8f7f4" stroke="#c8a45c" stroke-width="2.5"/>
+  <text x="200" y="78" text-anchor="middle" font-size="11" fill="#0a1f44" font-weight="bold">Общая площадь</text>
+  <text x="200" y="96" text-anchor="middle" font-size="10" fill="#777">{{ area }} м²</text>
+  {% endif %}
+  <rect x="30" y="210" width="340" height="30" rx="6" fill="#0a1f44"/>
+  <text x="200" y="230" text-anchor="middle" font-size="11" fill="#fff" font-weight="bold">ИТОГО = {{ area }} м²  •  Этаж {{ floor }} из {{ floor_total }}</text>
+</svg>
+</div>
 
 <div class="section">3. Финансовые условия</div>
 <div style="background:#fdfcfa;border:1pt solid #e5e5eb;border-radius:8pt;padding:10pt 12pt;margin:6pt 0">

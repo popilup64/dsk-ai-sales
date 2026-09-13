@@ -118,8 +118,8 @@ class KPEngineDB:
         discount_amount = base_price * (discount_percent / 100.0)
 
         max_disc = getattr(rule, "max_discount_rub", None)
-        if max_disc is not None and discount_amount > _to_float(max_disc):
-            discount_amount = _to_float(max_disc)
+        #if max_disc is not None and discount_amount > _to_float(max_disc):
+        #    discount_amount = _to_float(max_disc)
 
         price_after_discount = base_price - discount_amount
 

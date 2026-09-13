@@ -8,6 +8,8 @@ h1{font-family:'Playfair Display',Georgia,serif;font-size:22pt;color:#0a1f44;let
 .footer-box{background:#0a1f44;color:#fff;padding:10pt 12pt;border-radius:8pt;font-size:8pt;line-height:1.4;margin-top:14pt}
 .footer-box .gold{color:#c8a45c;font-weight:700}
 .badge{display:inline-block;background:#0a1f44;color:#fff;padding:2pt 6pt;border-radius:3pt;font-size:7pt;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+table{width:100%;border-collapse:collapse}
+th,td{font-size:9.5pt}
 </style></head><body>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12pt">
 <div><div style="font-size:7pt;color:#777;text-transform:uppercase;letter-spacing:.15em;font-weight:700">АО «СЗ «ДСК» • Отдел продаж</div><h1>ЖК «{{ complex_name }}» — КП № {{ kp_id }}</h1></div>
@@ -27,15 +29,20 @@ h1{font-family:'Playfair Display',Georgia,serif;font-size:22pt;color:#0a1f44;let
 <div style="border:1pt dashed #ccc;border-radius:8pt;padding:14pt;text-align:center;background:#faf9f7;color:#777;font-size:9pt"><div style="font-family:'Playfair Display',Georgia,serif;font-size:14pt;color:#0a1f44;margin-bottom:4pt">Планировка {{ room_type }}-комн.</div>Схематичный план — файл: plan_{{ apartment_id }}.jpg</div>
 
 <div class="section">3. Финансовые условия</div>
-<table class="table"><tr><th>Статья</th><th>Сумма</th></tr>
-<tr><td>Базовая стоимость квартиры</td><td class="num">{{ base_price_pdf }}</td></tr>
-<tr><td>Скидка {{ discount_percent }}% ({{ 'спецпредложение за наличный расчёт' if discount_percent > 0 else 'без скидки — ипотека' }})</td><td class="num gold">{{ discount_pdf }}</td></tr>
-<tr style="font-weight:700;background:#f8f7f4"><td>Стоимость квартиры со скидкой</td><td class="num" style="font-size:11pt;color:#0a1f44">{{ after_discount_pdf }}</td></tr>
-{% if services_pdf != "—" %}<tr><td>Доп. услуги</td><td class="num">{{ services_pdf }}</td></tr>{% endif %}
-<tr style="font-weight:800;background:#0a1f44;color:#fff"><td style="color:#fff">ИТОГО К ОПЛАТЕ</td><td class="num" style="font-size:13pt;color:#c8a45c">{{ final_pdf }}</td></tr></table>
+<div style="background:#fdfcfa;border:1pt solid #e5e5eb;border-radius:8pt;padding:10pt 12pt;margin:6pt 0">
+  {{ _kp_table_html | safe }}
+  {% if not _kp_table_html %}
+    <div style="font-size:9pt;color:#777">Таблица не сформирована.</div>
+  {% endif %}
+</div>
 
 <div class="section">4. График платежей</div>
-<div class="info-block" style="font-size:9pt"><strong>Этап 1 — Бронирование (30%):</strong> <span style="font-weight:700">{{ "{:,.0f}".format((final_pdf | int) * 0.3) }} ₽</span> — при подписании договора.<br><strong>Этап 2 — Основной платёж (70%):</strong> <span style="font-weight:700">{{ "{:,.0f}".format((final_pdf | int) * 0.7) }} ₽</span> — через 3 месяца или при сдаче объекта (по соглашению).</div>
+<div class="info-block" style="font-size:9pt">
+  <strong>Этап 1 — Бронирование (30%):</strong>
+  <span style="font-weight:700">{{ "{:,.0f}".format(final_price * 0.3).replace(",", " ") }} ₽</span> — при подписании договора.<br>
+  <strong>Этап 2 — Основной платёж (70%):</strong>
+  <span style="font-weight:700">{{ "{:,.0f}".format(final_price * 0.7).replace(",", " ") }} ₽</span> — через 3 месяца или при сдаче объекта (по соглашению).
+</div>
 
 <div class="section">5. Информация о сроках и рисках</div>
 <div class="risk-box" style="white-space:pre-wrap;line-height:1.5">{{ risk_summary }}</div>

@@ -1,15 +1,29 @@
 <!DOCTYPE html>
 <html lang="ru"><head><meta charset="utf-8"><style>
-@page{size:A4 portrait;margin:14mm 12mm 18mm 12mm;@top-right{content:"ДСК AI • КП № {{ kp_id }}";font-size:7pt;color:#777}@bottom-center{content:"© АО «СЗ «ДСК» • Конфиденциально";font-size:6pt;color:#aaa;border-top:.5pt solid #ddd;padding-top:3pt}}
+@page{size:A4 portrait;margin:14mm 12mm 18mm 12mm;@top-right{content:"ДСК AI • КП № {{ kp_id }}";font-size:7pt;color:#777}@bottom-center{content:"© АО «СЗ «ДСК» • Конфиденциально";font-size:6pt;color:#aaa;border-top:0.5pt solid #ddd;padding-top:3pt}}
 *{font-family:'Inter','Segoe UI',system-ui,sans-serif;color:#1a1a2e}
 h1{font-family:'Playfair Display',Georgia,serif;font-size:22pt;color:#0a1f44;letter-spacing:-0.03em;line-height:1.1;border-left:5pt solid #c8a45c;padding-left:10pt;margin:0 0 4pt}
 .section{font-family:'Playfair Display',Georgia,serif;font-size:13pt;color:#0a1f44;border-bottom:2pt solid #c8a45c;padding-bottom:3pt;margin:14pt 0 8pt}
-.info-block{background:#f8f7f4;border:.5pt solid #eae7dc;border-radius:8pt;padding:8pt 10pt;font-size:9pt}
+.info-block{background:#f8f7f4;border:0.5pt solid #eae7dc;border-radius:8pt;padding:8pt 10pt;font-size:9pt}
 .footer-box{background:#0a1f44;color:#fff;padding:10pt 12pt;border-radius:8pt;font-size:8pt;line-height:1.4;margin-top:14pt}
 .footer-box .gold{color:#c8a45c;font-weight:700}
 .badge{display:inline-block;background:#0a1f44;color:#fff;padding:2pt 6pt;border-radius:3pt;font-size:7pt;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 table{width:100%;border-collapse:collapse}
 th,td{font-size:9.5pt}
+
+/* ====== Риски (пункт 5.2) ====== */
+.risk-list{list-style:none;margin:0;padding:0}
+.risk-item{padding:10pt 0}
+.risk-item:not(:last-child){border-bottom:0.5pt dashed #e5dcc8}
+.risk-row{display:table;width:100%}
+.risk-bullet-cell{display:table-cell;width:22pt;vertical-align:top;padding-top:4pt}
+.risk-bullet{display:inline-block;width:8pt;height:8pt;border-radius:4pt}
+.risk-bullet.critical{background:#e53935}
+.risk-bullet.warning{background:#f2b705}
+.risk-text-cell{display:table-cell;vertical-align:top}
+.risk-title{font-weight:700;color:#0a1f44;font-size:9.5pt;margin:0 0 2pt 0}
+.risk-message{color:#333;font-size:8.5pt;line-height:1.55;margin:0}
+.risk-delay{color:#a8834a;font-size:7.5pt;font-weight:700;margin-top:3pt}
 </style></head><body>
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12pt">
 <div><div style="font-size:7pt;color:#777;text-transform:uppercase;letter-spacing:.15em;font-weight:700">АО «СЗ «ДСК» • Отдел продаж</div><h1>ЖК «{{ complex_name }}» — КП № {{ kp_id }}</h1></div>
@@ -29,7 +43,6 @@ th,td{font-size:9.5pt}
 <div style="margin:8pt 0">
   <svg width="100%" height="280" viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg" style="background:#fdfcfa;border:1pt dashed #ccc;border-radius:8pt;padding:12pt;display:block;font-family:Playfair Display,Georgia,serif;">
   <text x="200" y="22" text-anchor="middle" font-size="13" fill="#0a1f44" font-weight="bold">Планировка {{ room_type }}-комн. — {{ area }} м²</text>
-  <!-- Для 2-комн: Гостиная (55%), Спальня (30%), Кухня (15%) -->
   {% if room_type == "2" %}
   <rect x="30" y="45" width="160" height="70" rx="5" fill="#f8f7f4" stroke="#c8a45c" stroke-width="2.5"/>
   <text x="110" y="78" text-anchor="middle" font-size="10" fill="#0a1f44" font-weight="bold">Гостиная</text>
@@ -40,7 +53,6 @@ th,td{font-size:9.5pt}
   <rect x="30" y="135" width="160" height="70" rx="5" fill="#fff5e6" stroke="#c8a45c" stroke-width="2.5"/>
   <text x="110" y="168" text-anchor="middle" font-size="10" fill="#0a1f44" font-weight="bold">Кухня</text>
   <text x="110" y="186" text-anchor="middle" font-size="9" fill="#777">{{ (area * 0.15)|round|int }} м²</text>
-  <!-- Для 3+: делим на 4 части -->
   {% elif room_type == "3+" %}
   <rect x="30" y="45" width="160" height="60" rx="5" fill="#f8f7f4" stroke="#c8a45c" stroke-width="2.5"/>
   <text x="110" y="74" text-anchor="middle" font-size="9" fill="#0a1f44" font-weight="bold">Гостиная</text>
@@ -55,7 +67,6 @@ th,td{font-size:9.5pt}
   <text x="290" y="154" text-anchor="middle" font-size="9" fill="#0a1f44" font-weight="bold">Кухня</text>
   <text x="290" y="170" text-anchor="middle" font-size="9" fill="#777">{{ (area * 0.15)|round|int }} м²</text>
   {% else %}
-  <!-- Общий fallback -->
   <rect x="30" y="45" width="340" height="60" rx="5" fill="#f8f7f4" stroke="#c8a45c" stroke-width="2.5"/>
   <text x="200" y="78" text-anchor="middle" font-size="11" fill="#0a1f44" font-weight="bold">Общая площадь</text>
   <text x="200" y="96" text-anchor="middle" font-size="10" fill="#777">{{ area }} м²</text>
@@ -81,9 +92,82 @@ th,td{font-size:9.5pt}
   <span style="font-weight:700">{{ "{:,.0f}".format(final_price * 0.7).replace(",", " ") }} ₽</span> — через 3 месяца или при сдаче объекта (по соглашению).
 </div>
 
-<div class="section">5. Информация о сроках и рисках</div>
-<div class="risk-box" style="white-space:pre-wrap;line-height:1.5">{{ risk_summary }}</div>
-<p style="font-size:8pt;color:#777;margin-top:3pt">Сроки предварительные. Уточняйте актуальные даты у персонального менеджера.</p>
+<div class="section">5. Сроки, риски и безопасность</div>
+
+<!-- 5.1 — Таблица параметров объекта -->
+<div style="background:linear-gradient(95deg,#fffdf5 0%,#f8f7f4 100%);border-left:3pt solid #c8a45c;border-radius:0 8pt 8pt 0;padding:12pt 14pt;margin:8pt 0 10pt;box-shadow:0 2pt 8pt rgba(10,31,68,.06)">
+  <div style="font-family:'Playfair Display',Georgia,serif;font-size:11pt;color:#0a1f44;font-weight:700;margin-bottom:6pt">Ключевые параметры стройки</div>
+  <table style="width:100%;border-collapse:collapse;font-size:9pt">
+    <tr>
+      <th style="text-align:left;padding:6pt 0;border-bottom:0.5pt solid #c8a45c;color:#0a1f44;font-family:'Playfair Display',Georgia,serif;width:55%">Параметр</th>
+      <th style="text-align:left;padding:6pt 0;border-bottom:0.5pt solid #c8a45c;color:#0a1f44;font-family:'Playfair Display',Georgia,serif">Значение / оценка</th>
+    </tr>
+    <tr>
+      <td style="padding:5pt 0;font-weight:700;color:#5a5a5a">Готовность объекта</td>
+      <td style="padding:5pt 0">{{ progress }}%</td>
+    </tr>
+    <tr style="background:#fff">
+      <td style="padding:5pt 0;font-weight:700;color:#5a5a5a">Сдача (прогноз)</td>
+      <td style="padding:5pt 0">{{ completion_date }}</td>
+    </tr>
+    <tr>
+      <td style="padding:5pt 0;font-weight:700;color:#5a5a5a">JBI-отставание</td>
+      <td style="padding:5pt 0">{{ "≤ 30 дней" if progress|int > 80 else "> 30 дней ⚠️" }}</td>
+    </tr>
+    <tr style="background:#fff">
+      <td style="padding:5pt 0;font-weight:700;color:#5a5a5a">Материальный баланс</td>
+      <td style="padding:5pt 0">{{ "В норме" if progress|int > 70 else "Дефицит ⚠️" }}</td>
+    </tr>
+    <tr>
+      <td style="padding:5pt 0;font-weight:700;color:#5a5a5a">Критические этапы</td>
+      <td style="padding:5pt 0">{{ "Завершены" if progress|int > 85 else "Не завершены ⚠️" }}</td>
+    </tr>
+  </table>
+</div>
+
+<!-- 5.2 — Комментарий менеджера (список рисков) -->
+{% if risks %}
+<div style="background:#fff5e6;border-left:3pt solid #c8a45c;border-radius:0 8pt 8pt 0;padding:12pt 14pt;margin:6pt 0">
+  <div style="font-family:'Playfair Display',Georgia,serif;font-size:11pt;color:#0a1f44;font-weight:700;margin-bottom:10pt">
+    Комментарий менеджера — выявлено рисков: {{ risks|length }}
+  </div>
+
+  <ul class="risk-list">
+    {% for r in risks %}
+    <li class="risk-item">
+      <div class="risk-row">
+
+        <!-- Колонка с кружком: 22pt ширины, кружок 8pt → отступ до текста ≈ 14pt -->
+        <div class="risk-bullet-cell">
+          {% if r.severity == "critical" %}
+            <span class="risk-bullet critical"></span>
+          {% else %}
+            <span class="risk-bullet warning"></span>
+          {% endif %}
+        </div>
+
+        <!-- Текстовая колонка -->
+        <div class="risk-text-cell">
+          <p class="risk-title">{{ r.title }}</p>
+          <p class="risk-message">{{ r.message }}</p>
+          {% if r.estimated_delay_months and r.estimated_delay_months > 0 %}
+            <p class="risk-delay">Прогноз сдвига: до {{ r.estimated_delay_months }} мес.</p>
+          {% endif %}
+        </div>
+
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% else %}
+<div style="background:#eef7ee;border-left:3pt solid #4caf50;border-radius:0 8pt 8pt 0;padding:12pt 14pt;margin:6pt 0;font-size:9pt;color:#2e7d32">
+  <strong style="font-family:'Playfair Display',Georgia,serif;font-size:11pt;color:#1b5e20">Риски не выявлены</strong><br>
+  Строительство идёт по графику. Плановая дата сдачи — <strong>{{ completion_date }}</strong>.
+</div>
+{% endif %}
+
+<p style="font-size:8pt;color:#777;margin-top:6pt">Сроки предварительные. Уточняйте актуальные даты у персонального менеджера.</p>
 
 <div class="section">6. Дополнительные услуги</div>
 <p style="font-size:9pt">Парковка — <strong>1,5 млн ₽</strong> • Кладовая — <strong>500 тыс ₽</strong> • Ремонт — <strong>договорная</strong>. Отделка: <strong>{{ finishing }}</strong>.</p>

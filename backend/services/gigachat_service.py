@@ -387,6 +387,7 @@ Email: sales@dsk.ru
             "final_price_fmt": _fmt(final_num),
             "base_price_fmt": _fmt(base_num),
             "risk_summary": gc.get("risk_summary", ""),
+            "risks": context.get("risks", []), 
             "_kp_text_for_pdf": context.get("_kp_text_for_pdf", ""),
             "_kp_table_html": context.get("_kp_table_html", ""),
         }

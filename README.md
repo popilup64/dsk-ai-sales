@@ -121,3 +121,33 @@ GIGACHAT_FALLBACK_ENABLED=False
 - `weasyprint` в sandbox-окружении может давать `AttributeError`; в продакшене (`docker-compose`) работает
 - `.env` ищется из корня (`backend/app/config.py`: `env_file=".env"` + `env_file="../.env"`)
 - PDF генерируется из HTML-шаблона; кнопка «Скачать PDF» по центру (`flex justify-center`)
+
+## Полное описание по секциям (то, что не в кратком описании)
+
+### Секция 2 — SVG-планировка (многорядная, не перекрывается)
+`backend/templates/kp_pdf.html`: 2 строки × 2 блока (`Гостиная / Спальня / Кухня / Спальня 2` для 3+; `Гостиная / Спальня / Кухня` для 2-комн.). Динамические площади через `{{ area }}` с коэффициентами (`*0.55`, `*0.30` и т.д.). Золотые границы `#c8a45c`, Playfair заголовки. `</svg></div>` исправлен (был `</svg></div>` без `</div>` — нет, исправлено на корректное закрытие).
+
+### Секция 5 — Сроки, риски и безопасность
+Градиент `#fffdf5 → #f8f7f4`, золотая левая черта, таблица (готовность / JBI-отставание / материальный баланс / критические этапы). **Комментарии менеджера — вертикальный список** (3 `<li>`: JBI-delay >30д, дефицит, незавершённые этапы) + `{{ risk_summary }}` под ним — не inline, не в одну строку.
+
+### GigaChat (не трогать)
+`.env` в корне: `GIGACHAT_AUTH_KEY=...` (не CLIENT_ID/SECRET). `backend/app/config.py`: `env_file=".env"` + `env_file="../.env"`. `gigachat_service.py`: `_get_access_token()` (OAuth + SDK), `generate_pdf()` с `Weasyprint`, `_generate_fallback()` (Jinja2). `GIGACHAT_FALLBACK_ENABLED=True` → локальный шаблон, GigaChat не ломается.
+
+### API endpoints и запуск
+- `GET /api/v1/kp/pdf/{apartment_id}` → `Response(media_type="application/pdf")`
+- `POST /api/v1/manager/analyze` → `manager.py` подключён в `main.py`
+- `POST /api/v1/risks` / `/competitors`
+- `frontend/` на `5173`, `backend/` на `8000`
+- `docker-compose.yml`: убрать obsolete `version` (`sed -i '1d'`)
+
+### Frontend / UI
+- `App.jsx`: `renderMarkdown()` (регекс с `filter(Boolean)` для таблиц `|...|`), `typedText` (анимация печати через `useEffect`), `handleDownloadPDF()`
+- `useState` порядок исправлен (`typedText` до `result`) — исправлен белый экран `/complex/2`
+- Тип-анимация + градиент-карточки (`bg-gradient-to-br`)
+
+### Что исправлено (известные ошибки)
+- `ValueError: unsupported format character '''` (`"%'d"` в Jinja → `fmt()` в `generate_pdf()`)
+- `NameError: svc_total / final_pdf` → переменные добавлены
+- `404 /manager/analyze` → `manager.py` создан и подключён
+- SQLite `floor_plan`: не менялась (ALTER не вызывался), модель синхронна с DB
+- `weasyprint` `AttributeError: super...transform` — sandbox, в продакшене работает

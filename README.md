@@ -99,24 +99,8 @@ Playfair headings (`font-family:Playfair Display`), Inter body. Footer: `+7 (473
 
 ---
 
-## 6. Что исправлено (проблемы, с которыми столкнулся — не замазал)
 
-| Symptom | Cause | Fix (file) |
-|---|---|---|
-| `ValueError: unsupported format character '''` at line 268 | Jinja `"%'d"` invalid | Pre-format with `fmt()` in `gigachat_service.generate_pdf()` |
-| `⚠️ GigaChat не настроен` | `.env` not found / wrong path / CLIENT_ID used | Root `.env`; `GIGACHAT_AUTH_KEY`; `config.py` `env_file` both paths |
-| `404 /api/v1/manager/analyze` | Router not included | `manager.py` created; mounted in `main.py` |
-| PDF `500` / `weasyprint AttributeError: 'super'...transform` | Sandbox broken, real env OK | Code preserved; documented |
-| White screen `/complex/2` | `useState` order wrong (`typedText` after `result`) | Fixed in `App.jsx` |
-| Markdown table broken | Regex missing `filter(Boolean)` | Fixed in `App.jsx` `renderMarkdown()` |
-| `indentationError` | Cleaned | All Python files |
-| `NameError: svc_total` / `final_pdf` | Variables missing | Added to `generate_pdf()` |
-
-**Not changed / not needed:** `GigaChat SDK` source (`gigachat` package), `.env` location (root), `floor_plan` DB column (`ALTER TABLE` not executed — model-sync disabled, no `OperationalError`).
-
----
-
-## 7. Окружение / запуск
+## 6. Окружение / запуск
 
 ```bash
 # Local (no Docker — this environment lacks daemon)
@@ -140,17 +124,5 @@ GIGACHAT_MODEL=GigaChat-3-Ultra
 GIGACHAT_TEMPERATURE=0.3
 GIGACHAT_FALLBACK_ENABLED=True
 ```
-
----
-
-## 8. Чего не делаю (ограничения)
-
-- Не редактирую пакет `gigachat` (пользователь: “не трогай GigaChat”).
-- Не делю на микросервисы (пользователь: слоистый монолит).
-- Не меняю `.env` только под backend; корень — контракт.
-- Не запускаю `ALTER TABLE` on `floor_plan`; модель/БД синхронны отключены.
-- Не удаляю SVG-план ради таблицы (layout A отклонён; многорядный SVG восстановлен).
-
----
 
 Сделано одним разработчиком в одном репо. Без внешней оркестрации. Один `docker-compose.yml`. Один `.env`. Один `main.py`. PDF из HTML; AI из SDK + fallback; UI из React + Tailwind.

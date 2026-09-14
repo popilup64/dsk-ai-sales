@@ -111,7 +111,3 @@ curl -X POST http://localhost:8000/api/v1/kp/generate   -H "Content-Type: applic
 }
 ```
 
-## Команда
-- [Имя] — Backend / AI
-- [Имя] — Frontend / UX
-- [Имя] — Product / Analytics

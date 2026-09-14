@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Routes, Route, Link, useParams } from 'react-router-dom'
 import axios from 'axios'
 
-const API = 'http://localhost:8000/api/v1'
+const API = '/api/v1'
 
 /* ====== Home / Projects ====== */
 function HomePage() {

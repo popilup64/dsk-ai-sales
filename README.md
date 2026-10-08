@@ -103,11 +103,15 @@ Playfair headings (`font-family:Playfair Display`), Inter body. Footer: `+7 (473
 ## 6. Окружение / запуск
 
 ```bash
-# Local (no Docker — this environment lacks daemon)
-source backend/venv/bin/activate
-uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+Backend:
+cd dsk-ai-sales/backend
+source venv/bin/activate
+cd ..
+uvicorn app.main:app --reload --port 8000
 
-Frontend: cd frontend && npm run dev  (port 5173)
+Frontend:
+cd dsk-ai-sales/frontend
+npm run dev
 
 ```
 

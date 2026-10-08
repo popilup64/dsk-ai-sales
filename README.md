@@ -116,3 +116,9 @@ curl -X POST http://localhost:8000/api/v1/manager/analyze \
 sed -i '1d' docker-compose.yml
 docker-compose build && docker-compose up -d
 ```
+
+---
+
+### Автор:
+[Popilup64](https://github.com/popilup64)
+

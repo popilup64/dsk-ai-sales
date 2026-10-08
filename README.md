@@ -106,15 +106,9 @@ Playfair headings (`font-family:Playfair Display`), Inter body. Footer: `+7 (473
 # Local (no Docker — this environment lacks daemon)
 source backend/venv/bin/activate
 uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
-# Frontend: cd frontend && npm run dev  (port 5173)
 
-# Verify
-curl -X POST http://localhost:8000/api/v1/manager/analyze \
-  -H "Content-Type: application/json" -d '{"dialog_text":"дорого"}'
+Frontend: cd frontend && npm run dev  (port 5173)
 
-# Docker (only if daemon available; fix compose first)
-sed -i '1d' docker-compose.yml
-docker-compose build && docker-compose up -d
 ```
 
 ---
